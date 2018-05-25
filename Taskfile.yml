@@ -1,0 +1,71 @@
+default:
+  desc: 帮助文件
+  cmds:
+    - task -l
+
+build:
+  desc: 编译应用
+  cmds:
+    - GOBIN=`pwd` go install cmd/main.go
+
+dev:
+  desc: 编译应用
+  cmds:
+    - ./main node
+
+build_linux:
+  desc: 交叉编译成linux应用
+  cmds:
+    - GOPATH=`pwd` GOBIN=`pwd` CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go install kchain/cmd/main.go
+
+
+docker_build:
+  desc: 构建docker镜像
+  cmds:
+      - task: build_linux
+      - docker build -t kchain .
+      - docker tag kchain registry.cn-hangzhou.aliyuncs.com/yuanben/kchain
+
+docker_push:
+  desc: docker push
+  cmds:
+      - docker push registry.cn-hangzhou.aliyuncs.com/yuanben/kchain
+
+docker_test:
+  desc: kchain docker test
+  cmds:
+    - ls * | grep example_data || mkdir example_data
+    - docker run --rm -it -v `pwd`/example_data:/kdata -p 46656:46656 -p 46657:46657 kchain init
+    - docker run --rm -it -v `pwd`/example_data:/kdata -p 46656:46656 -p 46657:46657 kchain
+
+
+test_clear:
+  desc: 删除文件
+  cmds:
+    - ./main --home test/d1 unsafe_reset_all
+    - ./main --home test/d2 unsafe_reset_all
+    - ./main --home test/d3 unsafe_reset_all
+    - ./main --home test/d4 unsafe_reset_all
+    - ./main --home test/d5 unsafe_reset_all
+    - ./main --home test/d6 unsafe_reset_all
+
+
+test_rm:
+  desc: 删除文件
+  cmds:
+    - rm -rf test/d1
+    - rm -rf test/d2
+    - rm -rf test/d3
+    - rm -rf test/d4
+    - rm -rf test/d5
+    - rm -rf test/d6
+
+test_create:
+  desc: 删除文件
+  cmds:
+    - ./main --home test/d1 init
+    - ./main --home test/d2 init
+    - ./main --home test/d3 init
+    - ./main --home test/d4 init
+    - ./main --home test/d5 init
+    - ./main --home test/d6 init
