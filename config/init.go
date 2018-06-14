@@ -18,18 +18,6 @@ var (
 	home       string
 )
 
-func DefaultAppConfig() *AppConfig {
-	return &AppConfig{
-		UdpPort:           8081,
-		UdpHost:           "0.0.0.0",
-		HttpHost:          "0.0.0.0",
-		HttpPort:          8080,
-		AdvertiseHttpAddr: "",
-		AdvertiseUdpAddr:  "",
-		LogLevel:          "debug",
-	}
-}
-
 type AppConfig struct {
 	Name     string
 	Addr     string
@@ -73,4 +61,12 @@ func (cfg *Config) SetRoot(root string) *Config {
 	cfg.Mempool.RootDir = root
 	cfg.Consensus.RootDir = root
 	return cfg
+}
+
+func SetLog(l1 tlog.Logger) {
+	l = l1
+}
+
+func GetLog() tlog.Logger {
+	return l
 }

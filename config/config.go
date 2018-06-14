@@ -4,13 +4,6 @@ import (
 	cfg "github.com/tendermint/tendermint/config"
 )
 
-func GetCfg() *Config {
-	if instance == nil {
-		panic("please init config")
-	}
-	return instance
-}
-
 func DefaultCfg() *Config {
 	once.Do(func() {
 		instance = &Config{
@@ -25,4 +18,16 @@ func DefaultCfg() *Config {
 	})
 
 	return instance
+}
+
+func DefaultAppConfig() *AppConfig {
+	return &AppConfig{
+		UdpPort:           8081,
+		UdpHost:           "0.0.0.0",
+		HttpHost:          "0.0.0.0",
+		HttpPort:          8080,
+		AdvertiseHttpAddr: "",
+		AdvertiseUdpAddr:  "",
+		LogLevel:          "debug",
+	}
 }

@@ -13,10 +13,7 @@ var (
 	cfg    *config.Config
 )
 
-func SetLogger(l log.Logger) {
-	logger = l.With("module", "kapp")
-}
-
-func SetCfg(c *config.Config) {
-	cfg = c
+func Init() {
+	cfg = config.DefaultCfg()
+	logger = config.GetLog().With("module", "kapp")
 }

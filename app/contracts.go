@@ -3,24 +3,18 @@ package app
 import (
 	"errors"
 	"github.com/yuin/gopher-lua"
-	"github.com/hashicorp/golang-lru/simplelru"
-	"github.com/tendermint/tmlibs/common"
 	"github.com/layeh/gopher-luar"
+	"github.com/patrickmn/go-cache"
+	"time"
 )
 
 type ContractManager struct {
-	cache simplelru.LRUCache
-	size  int
+	cache *cache.Cache
 }
 
-func NewContractManager(size int) *ContractManager {
-	l, err := simplelru.NewLRU(size, nil)
-	if err != nil {
-		panic(err.Error())
-	}
+func NewContractManager() *ContractManager {
 	return &ContractManager{
-		cache: l,
-		size:  size,
+		cache: cache.New(5*time.Minute, 10*time.Minute),
 	}
 }
 
@@ -36,15 +30,7 @@ func (c *ContractManager) AddContract(addr string) error {
 		return err
 	}
 
-	if c.cache.Len() > c.size {
-		k, _, ok := c.cache.GetOldest()
-		if ok {
-			c.DelContract(common.Fmt("%s", k))
-		}
-	}
-
-	c.cache.Add(addr, l)
-	return nil
+	return c.cache.Add(addr, l, cache.DefaultExpiration)
 }
 
 func (c *ContractManager) GetContract(addr string) *lua.LState {
@@ -56,12 +42,12 @@ func (c *ContractManager) GetContract(addr string) *lua.LState {
 	return nil
 }
 
-func (c *ContractManager) DelContract(addr string) bool {
-	ctt := c.GetContract(addr)
-	if ctt != nil {
+func (c *ContractManager) DelContract(addr string) {
+	if ctt := c.GetContract(addr); ctt != nil {
 		ctt.Close()
+		c.cache.Delete(addr)
 	}
-	return c.cache.Remove(addr)
+
 }
 
 type Contract struct {
@@ -74,7 +60,7 @@ func (c *Contract) Deploy() {
 
 	l := lua.NewState()
 	defer l.Close()
-
+	
 	if err := l.DoString(""); err != nil {
 		panic(err.Error())
 	}
@@ -86,5 +72,4 @@ func (c *Contract) Deploy() {
 	if err != nil {
 		panic(err.Error())
 	}
-
 }

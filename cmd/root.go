@@ -62,6 +62,9 @@ var RootCmd = &cobra.Command{
 			logger = log.NewTracingLogger(logger)
 		}
 
+
+		k.SetLog(logger)
+
 		logger = logger.With("module", "main")
 		return nil
 	},

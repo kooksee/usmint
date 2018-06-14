@@ -28,10 +28,6 @@ func New(name, dbDir string) *KApp {
 	return &KApp{}
 }
 
-//func (app *KApp) SetReactor(kr *KReactor) {
-//	krt = kr
-//}
-
 // 实现abci的Info协议
 func (app *KApp) Info(req types.RequestInfo) (res types.ResponseInfo) {
 
