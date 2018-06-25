@@ -13,6 +13,9 @@ var (
 	logger log.Logger
 )
 
+func Init() {
+
+}
 func SetLogger(l log.Logger) {
 	logger = l
 }

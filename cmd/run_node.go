@@ -5,18 +5,17 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/tendermint/tendermint/proxy"
-	"github.com/kooksee/kchain/cfg"
 	cmn "github.com/tendermint/tmlibs/common"
-	kn "github.com/tendermint/tendermint/node"
-	"github.com/kooksee/kchain/app"
-	pvm "github.com/tendermint/tendermint/types/priv_validator"
-	"github.com/gin-gonic/gin/json"
-	"github.com/kooksee/kchain/reactors"
-	"time"
-)
 
-var kcfg = cfg.GetConfig()
+	pvm "github.com/tendermint/tendermint/types/priv_validator"
+
+	"time"
+
+	kn "github.com/kooksee/usmint/node"
+	"github.com/kooksee/usmint/app"
+	"encoding/json"
+	"github.com/kooksee/usmint/proxy"
+)
 
 // AddNodeFlags exposes some common configuration options on the command-line
 // These are exposed for convenience of commands embedding a tendermint node
@@ -59,7 +58,7 @@ func sdd(node *kn.Node) {
 			p.Send(byte(0x60), []byte("dvvhvvhkvvsvgcvsgvs\n\n\n\n\n\n\n\n"))
 		}
 
-		time.Sleep(time.Second*2)
+		time.Sleep(time.Second * 2)
 	}
 }
 
@@ -72,13 +71,11 @@ func NewRunNodeCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			// 初始化配置
-			kcfg().Config = config
 
-			kapp := app.New("kchain", kcfg().Config.DBDir())
-			kr := reactors.NewKReactor()
+			kapp := app.New("kchain", config.DBDir())
+			//kr := reactors.NewKReactor()
 			// 启动abci服务和tendermint节点
 			n, err := kn.NewNode(
-				kr,
 				config,
 				pvm.LoadFilePV(config.PrivValidatorFile()),
 				proxy.NewLocalClientCreator(kapp),
@@ -118,8 +115,6 @@ func NewRunNodeCmd() *cobra.Command {
 
 			//nn := n.Switch().NodeInfo()
 			//nn.Channels = append(nn.Channels, kr.ChId)
-
-			kcfg().Node = n
 
 			//addr := strings.Split(config.ProxyApp, ":")
 			//if err := web.Run(addr[len(addr)-1], kr); err != nil {

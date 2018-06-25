@@ -3,10 +3,8 @@ package config
 import (
 	"sync"
 
-	cfg "github.com/tendermint/tendermint/config"
+	tcfg "github.com/tendermint/tendermint/config"
 	tlog "github.com/tendermint/tmlibs/log"
-	goc "github.com/patrickmn/go-cache"
-	"time"
 )
 
 var (
@@ -14,7 +12,6 @@ var (
 	instance   *Config
 	l          tlog.Logger
 	configPath string
-	cache      = goc.New(time.Minute, 5*time.Minute)
 	home       string
 )
 
@@ -42,15 +39,15 @@ type AppConfig struct {
 
 type Config struct {
 	// Top level options use an anonymous struct
-	cfg.BaseConfig `mapstructure:",squash"`
+	tcfg.BaseConfig `mapstructure:",squash"`
 
 	// Options for services
-	RPC       *cfg.RPCConfig       `mapstructure:"rpc"`
-	P2P       *cfg.P2PConfig       `mapstructure:"p2p"`
-	Mempool   *cfg.MempoolConfig   `mapstructure:"mempool"`
-	Consensus *cfg.ConsensusConfig `mapstructure:"consensus"`
-	TxIndex   *cfg.TxIndexConfig   `mapstructure:"tx_index"`
-	App       *AppConfig           `mapstructure:"app"`
+	RPC       *tcfg.RPCConfig       `mapstructure:"rpc"`
+	P2P       *tcfg.P2PConfig       `mapstructure:"p2p"`
+	Mempool   *tcfg.MempoolConfig   `mapstructure:"mempool"`
+	Consensus *tcfg.ConsensusConfig `mapstructure:"consensus"`
+	TxIndex   *tcfg.TxIndexConfig   `mapstructure:"tx_index"`
+	App       *AppConfig            `mapstructure:"app"`
 }
 
 // SetRoot sets the RootDir for all Config structs

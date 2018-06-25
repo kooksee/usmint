@@ -1,12 +1,16 @@
-default:
-  desc: 帮助文件
+_version:
+  desc: 项目版本处理
   cmds:
-    - task -l
+    - echo "package version" > {{.VersionFile}}
+    - echo 'const Version = "{{.Version}}"' >> {{.VersionFile}}
+    - echo 'const BuildVersion = "{{.BuildVersion}}"' >> {{.VersionFile}}
+    - echo 'const GitCommit = "{{.GitCommit}}"' >> {{.VersionFile}}
 
 build:
   desc: 编译应用
+  deps: [_version]
   cmds:
-    - GOBIN=`pwd` go install cmd/main.go
+    - GOBIN=`pwd` go install main.go
 
 dev:
   desc: 编译应用
@@ -15,21 +19,43 @@ dev:
 
 build_linux:
   desc: 交叉编译成linux应用
+  deps: [_version]
   cmds:
-    - GOPATH=`pwd` GOBIN=`pwd` CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go install kchain/cmd/main.go
-
+    - GOBIN=`pwd` CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go install main.go
 
 docker_build:
   desc: 构建docker镜像
+  deps: [build_linux]
+  vars:
+    ImageCommitName: "kchain:{{.Version}}_{{.GitCommit}}"
   cmds:
-      - task: build_linux
-      - docker build -t kchain .
-      - docker tag kchain registry.cn-hangzhou.aliyuncs.com/yuanben/kchain
+    - docker build -t {{.ImageName}} .
+    - docker tag {{.ImageName}} {{.ImagesPrefix}}{{.ImageName}}
+    - docker tag {{.ImageName}} {{.ImagesPrefix}}{{.ImageCommitName}}
+    - docker tag {{.ImageName}} {{.ImagesPrefix}}{{.ImageNameTest}}
 
-docker_push:
-  desc: docker push
+docker_push_dev:
+  desc: docker push test
+  deps: [docker_build]
+  vars:
+      ImageCommitName: "kchain:{{.Version}}_{{.GitCommit}}"
   cmds:
-      - docker push registry.cn-hangzhou.aliyuncs.com/yuanben/kchain
+      - docker push {{.ImagesPrefix}}{{.ImageNameTest}}
+
+docker_push_pro:
+  desc: docker push pro
+  deps: [docker_build]
+  vars:
+      ImageCommitName: "kchain:{{.Version}}_{{.GitCommit}}"
+  cmds:
+      - docker push {{.ImagesPrefix}}{{.ImageCommitName}}
+      - docker push {{.ImagesPrefix}}{{.ImageName}}
+
+rm_stop:
+  desc: 删除所有的的容器
+  cmds:
+    - sudo docker rm -f $(sudo docker ps -qa)
+    - sudo docker ps -a
 
 docker_test:
   desc: kchain docker test
@@ -49,6 +75,10 @@ test_clear:
     - ./main --home test/d5 unsafe_reset_all
     - ./main --home test/d6 unsafe_reset_all
 
+docker_login:
+  desc: 登陆镜像仓库
+  cmds:
+    - docker login -u baiyunhui@yuanben -p ybl12345 registry.cn-hangzhou.aliyuncs.com
 
 test_rm:
   desc: 删除文件

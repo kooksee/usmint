@@ -1,4 +1,4 @@
-package cnst
+package consts
 
 const (
 	// events
@@ -15,4 +15,6 @@ const (
 	DbPrefix        = "db:"
 	AccountPrefix   = "act:"
 	ValidatorPrefix = "val:"
+
+	TokenPrefix = "token:"
 )

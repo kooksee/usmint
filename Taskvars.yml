@@ -1,0 +1,10 @@
+BuildVersion:
+  sh: "echo `date +%FT%T%z`"
+GitCommit:
+  sh: "echo `git rev-parse --short=8 HEAD`"
+Version: "v0.3.0"
+VersionFile: "version/version.go"
+ImagesPrefix: "registry.cn-hangzhou.aliyuncs.com/yuanben/"
+ImageName: "kchain"
+TestTag: ":test"
+ImageNameTest: "kchain:test"

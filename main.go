@@ -23,7 +23,10 @@ func main() {
 		cmd.ShowNodeIDCmd,
 		cmd.GenNodeKeyCmd,
 		cmd.VersionCmd,
+
 		cmd.NewRunNodeCmd(),
+		cmd.NewDockerOptCmd(),
+		cmd.NewBuildCmd(),
 	)
 
 	err := cli.PrepareBaseCmd(rootCmd, "U", os.ExpandEnv("$PWD/kdata")).Execute()

@@ -8,7 +8,7 @@ func JsonDecode(L *lua.LState) int {
 	value, err := decodeRaw(L, []byte(L.CheckString(1)))
 	if err != nil {
 		L.Push(lua.LNil)
-		logger.Error("json decode error", "err", err)
+		//logger.Error("json decode error", "err", err)
 		return 1
 	}
 	L.Push(value)
