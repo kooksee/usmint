@@ -2,7 +2,6 @@ package cmn
 
 import (
 	_ "encoding/hex"
-	"encoding/json"
 	"errors"
 	"math/big"
 	"math/rand"

@@ -17,7 +17,6 @@
 package cmn
 
 import (
-	"encoding/json"
 	"reflect"
 	"sync"
 )

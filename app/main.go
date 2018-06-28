@@ -1,39 +1,28 @@
 package app
 
 import (
-	"bytes"
-	"encoding/hex"
-	"fmt"
-	"encoding/binary"
-	"github.com/pkg/errors"
 	"github.com/tendermint/abci/types"
-	dbm "github.com/tendermint/tmlibs/db"
-	"github.com/kooksee/kchain/types/cnst"
 	"github.com/kooksee/kchain/types/code"
+	"github.com/kooksee/usmint/mint"
+	"github.com/kooksee/usmint/cmn"
+	"github.com/kooksee/usmint/config"
 )
 
 type KApp struct {
 	types.BaseApplication
-	ValUpdates []types.Validator
-	GValidator string
+	m *mint.Mint
 }
 
-func New(name, dbDir string) *KApp {
-
-	db, err := dbm.NewGoLevelDB(name, dbDir)
-	if err != nil {
-		panic(err)
-	}
-	state = NewState("KAppState", db).load()
-	return &KApp{}
+func New() *KApp {
+	return &KApp{m: mint.New()}
 }
 
 // 实现abci的Info协议
 func (app *KApp) Info(req types.RequestInfo) (res types.ResponseInfo) {
 
-	res.Data = cfg.Moniker
-	res.LastBlockHeight = int64(state.Height)
-	res.LastBlockAppHash = state.AppHash
+	res.Data = config.DefaultCfg().Moniker
+	res.LastBlockHeight = app.m.GetState().Height
+	res.LastBlockAppHash = app.m.GetState().AppHash
 	res.Version = req.Version
 
 	return
@@ -46,56 +35,23 @@ func (app *KApp) SetOption(req types.RequestSetOption) types.ResponseSetOption {
 
 // 实现abci的DeliverTx协议
 func (app *KApp) DeliverTx(txBytes []byte) types.ResponseDeliverTx {
-	tx := NewTransaction()
-
-	m, _ := hex.DecodeString(string(txBytes))
-
-	// decode tx
-	if err := tx.FromBytes(m); err != nil {
-		return types.ResponseDeliverTx{
-			Code: code.ErrTransactionDecode.Code,
-			Log:  err.Error(),
-		}
+	if err := app.m.DeliverTx(txBytes); err != nil {
+		return types.ResponseDeliverTx{Code: code.ErrInternal.Code, Log: err.Error()}
 	}
-
 	return types.ResponseDeliverTx{Code: code.Ok.Code}
 }
 
 // 实现abci的CheckTx协议
 func (app *KApp) CheckTx(txBytes []byte) types.ResponseCheckTx {
-
-	tx := NewTransaction()
-	m, _ := hex.DecodeString(string(txBytes))
-
-	// decode tx
-	if err := tx.FromBytes(m); err != nil {
-		return types.ResponseCheckTx{
-			Code: code.ErrTransactionDecode.Code,
-			Log:  err.Error(),
-		}
+	if err := app.m.DeliverTx(txBytes); err != nil {
+		return types.ResponseCheckTx{Code: code.ErrInternal.Code, Log: err.Error()}
 	}
-
-	// verify sign
-	if err := tx.Verify(); err != nil {
-		return types.ResponseCheckTx{
-			Code: code.ErrTransactionVerify.Code,
-			Log:  err.Error(),
-		}
-	}
-
 	return types.ResponseCheckTx{Code: code.Ok.Code}
 }
 
 // Commit will panic if InitChain was not called
 func (app *KApp) Commit() (res types.ResponseCommit) {
-
-	appHash := make([]byte, 8)
-	binary.PutVarint(appHash, state.Size)
-	state.AppHash = appHash
-	state.Height ++
-
-	state.save()
-	return types.ResponseCommit{Data: appHash}
+	return types.ResponseCommit{Data: app.m.Commit()}
 }
 
 func (app *KApp) Query(reqQuery types.RequestQuery) (res types.ResponseQuery) {
@@ -104,87 +60,17 @@ func (app *KApp) Query(reqQuery types.RequestQuery) (res types.ResponseQuery) {
 
 // Save the validators in the merkle tree
 func (app *KApp) InitChain(req types.RequestInitChain) types.ResponseInitChain {
-
-	logger.Info("InitChain")
-	for _, v := range req.Validators {
-
-		// 最高权限拥有者
-		if v.Power == 10 {
-
-			state.db.Set([]byte("__app:genesis_validator"), v.PubKey)
-
-			app.GValidator = hex.EncodeToString(v.PubKey)
-		}
-
-		if r := app.updateValidator(v); r != nil {
-			logger.Error("Error updating validators", "r", r.Error())
-		}
-	}
+	cmn.ErrPipeLog("app InitChain error", app.m.InitChain(req.Validators...))
 	return types.ResponseInitChain{}
 }
 
 func (app *KApp) BeginBlock(req types.RequestBeginBlock) types.ResponseBeginBlock {
-	app.ValUpdates = make([]types.Validator, 0)
-
-	d := state.db.Get([]byte("__app:genesis_validator"))
-	app.GValidator = hex.EncodeToString(d)
-
-	// iavl.NewVersionedTree().Hash()
-	// iavl.NewTree()
-
+	cmn.ErrPipeLog("app BeginBlock error", app.m.BeginBlock(nil))
 	return types.ResponseBeginBlock{}
 }
 
 func (app *KApp) EndBlock(req types.RequestEndBlock) types.ResponseEndBlock {
-	return types.ResponseEndBlock{ValidatorUpdates: app.ValUpdates}
-}
-
-// ---------------------------------------------
-
-// 更新validator
-func (app *KApp) updateValidator(v types.Validator) error {
-	key := []byte(cnst.ValidatorPrefix + hex.EncodeToString(v.PubKey))
-
-	// power等于-1的时候,开放节点的权限
-	if v.Power == -1 {
-		value := bytes.NewBuffer(make([]byte, 0))
-		if err := types.WriteMessage(&v, value); err != nil {
-			return errors.New(fmt.Sprintf("Error encoding validator: %v", err))
-		}
-
-		state.db.Set(key, value.Bytes())
-		state.Size ++
-
-		logger.Info("save node ok", "key", key)
-
-		v.Power = 0
-		app.ValUpdates = append(app.ValUpdates, v)
-		return nil
-	}
-
-	// power等于-2的时候,删除节点
-	if v.Power == -2 {
-		state.db.Delete(key)
-		logger.Info("delete node ok", "key", key)
-
-		v.Power = 0
-		app.ValUpdates = append(app.ValUpdates, v)
-		return nil
-	}
-
-	// power小于等于0的时候,删除验证节点
-	if v.Power >= 0 {
-		value := bytes.NewBuffer(make([]byte, 0))
-		if err := types.WriteMessage(&v, value); err != nil {
-			return errors.New(fmt.Sprintf("Error encoding validator: %v", err))
-		}
-
-		state.db.Set(key, value.Bytes())
-		state.Size ++
-
-		logger.Info("save node ok", "key", key)
-
-		app.ValUpdates = append(app.ValUpdates, v)
-	}
-	return nil
+	val, err := app.m.EndBlock(nil)
+	cmn.ErrPipeLog("app EndBlock error", err)
+	return types.ResponseEndBlock{ValidatorUpdates: val}
 }

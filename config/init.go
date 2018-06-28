@@ -65,5 +65,8 @@ func SetLog(l1 tlog.Logger) {
 }
 
 func GetLog() tlog.Logger {
+	if l == nil {
+		panic("please init log")
+	}
 	return l
 }

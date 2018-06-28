@@ -2,26 +2,28 @@ package types
 
 import (
 	"encoding/hex"
-	"github.com/tendermint/go-crypto"
 	"fmt"
 	"errors"
-	"github.com/kooksee/usmint/cmn"
-	"time"
+	"crypto/ecdsa"
+	"github.com/ethereum/go-ethereum/crypto"
 )
+
+func DecodeTx(bs []byte) (*Transaction, error) {
+	tx := &Transaction{}
+	return tx, json.Unmarshal(bs, tx)
+}
 
 func NewTransaction() *Transaction {
 	return &Transaction{}
 }
 
 type Transaction struct {
-	PubKey    string `json:"pubkey,omitempty"`
 	Signature string `json:"sign,omitempty"`
 	Data      string `json:"data,omitempty"`
 	Event     string `json:"event,omitempty"`
-
-	timestamp int64
+	Timestamp int64  `json:"time,omitempty"`
 	hash      []byte
-	pubkey    crypto.PubKey
+	pubkey    *ecdsa.PublicKey
 }
 
 func (t *Transaction) Dumps() ([]byte, error) {
@@ -49,7 +51,7 @@ func (t *Transaction) Hash() ([]byte, error) {
 		return nil, err
 	}
 
-	t.hash = crypto.Ripemd160(sign)
+	t.hash = crypto.Keccak256(sign)
 
 	return t.hash, nil
 }
@@ -63,70 +65,40 @@ func (t *Transaction) signMsg() []byte {
 		return nil
 	}
 
-	return []byte(fmt.Sprintf("%s%s%d", t.Data, t.Event, time.Now().Second()))
+	return []byte(fmt.Sprintf("%s%s%d", t.Data, t.Event, t.Timestamp))
 }
 
 // Sign 签名
-func (t *Transaction) Sign(priv crypto.PrivKey) ([]byte, error) {
+func (t *Transaction) Sign(priv *ecdsa.PrivateKey) ([]byte, error) {
 	msg := t.signMsg()
 	if msg == nil {
 		return nil, errors.New("签名数据为空")
 	}
 
-	sign := priv.Sign(msg)
-	if sign.IsZero() {
+	sig, err := crypto.Sign(msg, priv)
+	if err != nil {
 		return nil, errors.New("签名失败")
 	}
 
-	return sign.Bytes(), nil
+	return sig, nil
 }
 
-func (t *Transaction) GetPubKey() (crypto.PubKey, error) {
-	if t.pubkey != nil {
-		return t.pubkey, nil
-	}
-	return cmn.ParsePubkey(t.PubKey)
+func (t *Transaction) GetPubKey() *ecdsa.PublicKey {
+	return t.pubkey
 }
 
 // VerifySign 签名验证
 func (t *Transaction) VerifySign() error {
-
-	if t.Signature == "" || t.PubKey == "" {
-		return errors.New("sign or pubkey is null")
-	}
-
-	// 区块签名验证
-	d, err := hex.DecodeString(t.PubKey)
-	if err != nil {
-		return err
-	}
-
-	pk, err := crypto.PubKeyFromBytes(d)
-	if err != nil {
-		return err
-	}
-
-	// 缓存pubkey
-	t.pubkey = pk
-
 	sign, err := hex.DecodeString(t.Signature)
 	if err != nil {
 		return err
 	}
 
-	sig, err := crypto.SignatureFromBytes(sign)
+	pubkey, err := crypto.Ecrecover(t.signMsg(), sign)
 	if err != nil {
-		return err
-	}
-
-	msg := t.signMsg()
-	if msg == nil {
-		return errors.New("签名数据为空")
-	}
-
-	if !pk.VerifyBytes(crypto.Ripemd160(msg), sig) {
 		return errors.New("transaction verify false")
 	}
+	t.pubkey = crypto.ToECDSAPub(pubkey)
 
 	return nil
 }

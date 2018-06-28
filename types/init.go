@@ -10,11 +10,6 @@ var (
 // Address in go-crypto style
 type Address = cmn.HexBytes
 
-func DataResult(data interface{}) string {
-	d, _ := json.MarshalToString(map[string]interface{}{"data": data})
-	return d
-}
-
 type Map map[string]interface{}
 
 func (m Map) String() string {

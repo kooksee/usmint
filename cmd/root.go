@@ -41,8 +41,8 @@ func ParseConfig() (*k.Config, error) {
 
 // RootCmd is the root command for Tendermint core.
 var RootCmd = &cobra.Command{
-	Use:   "usmint",
-	Short: "usmint Core",
+	Use:   "mint",
+	Short: "mint core",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) (err error) {
 
 		if cmd.Name() == VersionCmd.Name() {
@@ -61,7 +61,6 @@ var RootCmd = &cobra.Command{
 		if viper.GetBool(cli.TraceFlag) {
 			logger = log.NewTracingLogger(logger)
 		}
-
 
 		k.SetLog(logger)
 

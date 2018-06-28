@@ -1,5 +1,7 @@
 package consts
 
+import "strings"
+
 const (
 	// events
 	DbSet        = "DbSet"
@@ -17,4 +19,11 @@ const (
 	ValidatorPrefix = "val:"
 
 	TokenPrefix = "token:"
+
+	MetaPrefix  = "meta:"
+	StatePrefix = "state"
 )
+
+func Meta(strs ... string) string {
+	return MetaPrefix + strings.Join(strs, "")
+}
