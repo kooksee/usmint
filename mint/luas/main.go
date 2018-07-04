@@ -39,6 +39,25 @@ func (c *Contract) Call(method string, args string) error {
 	}, val)
 }
 
+func (c *Contract) CallWithRet(method string, args string) ([]byte, error) {
+	val, err := decodeRaw(c.l, []byte(args))
+	if err != nil {
+		return nil, err
+	}
+
+	if err := c.l.CallByParam(lua.P{
+		Fn:      c.l.GetGlobal(method),
+		NRet:    1,
+		Protect: true,
+	}, val); err != nil {
+		return nil, err
+	}
+
+	ret := c.l.Get(-1)
+	c.l.Pop(1)
+	return LValueDumps(ret)
+}
+
 func (c *Contract) LoadLib() {
 	//	加载系统类库
 	c.l.SetGlobal("field", luar.New(c.l, c))

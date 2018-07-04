@@ -11,6 +11,7 @@ type Contract struct {
 }
 
 func (c *Contract) Deploy() {
+	//
 
 	l := lua.NewState()
 	defer l.Close()

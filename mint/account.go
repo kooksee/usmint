@@ -1,11 +1,11 @@
-package accounts
+package mint
 
 import (
 	"encoding/hex"
-	"kchain/cmn"
-	"github.com/tendermint/go-crypto"
-	"github.com/tendermint/tmlibs/common"
-	"kchain/types"
+	"crypto/ecdsa"
+	"ybkchain/cmn"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 // Account
@@ -13,8 +13,8 @@ type Account struct {
 	PubKey string          `json:"pubkey,omitempty" mapstructure:"pubkey"`
 	Roles  map[string]bool `json:"roles,omitempty" mapstructure:"roles"`
 
-	pubKey  crypto.PubKey
-	address common.HexBytes
+	pubKey  *ecdsa.PublicKey
+	address common.Address
 }
 
 func NewAccount() *Account {
@@ -56,31 +56,20 @@ func (a *Account) Save() error {
 }
 
 // create an Address from a string
-func (a *Account) GetAddress() (addr types.Address, err error) {
+func (a *Account) GetAddress() (addr common.Address, err error) {
 	if len(a.address) == 0 {
-		pk, err := a.GetPubKey()
-		if err != nil {
-			return nil, err
-		}
-
-		a.address = pk.Address()
+		a.address = common.HexToAddress(a.PubKey)
 	}
 	return a.address, nil
 }
 
-func (a *Account) GetPubKey() (crypto.PubKey, error) {
+func (a *Account) GetPubKey() (*ecdsa.PublicKey, error) {
 	if a.pubKey == nil {
 		d, err := hex.DecodeString(a.PubKey)
 		if err != nil {
 			return nil, err
 		}
-
-		pk, err := crypto.PubKeyFromBytes(d)
-		if err != nil {
-			return nil, err
-		}
-
-		a.pubKey = pk
+		a.pubKey = crypto.ToECDSAPub(d)
 	}
 
 	return a.pubKey, nil

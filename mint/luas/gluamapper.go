@@ -58,6 +58,11 @@ func (mapper *Mapper) Map(tbl *lua.LTable, st interface{}) error {
 	return decoder.Decode(mp)
 }
 
+func (mapper *Mapper) Dumps(tbl lua.LValue) ([]byte, error) {
+	opt := mapper.Option
+	return json.Marshal(ToGoValue(tbl, opt))
+}
+
 // Map maps the lua table to the given struct pointer with default options.
 func Map(state *lua.LState, name string, st interface{}) error {
 	tbl, ok := state.GetGlobal(name).(*lua.LTable)
@@ -65,6 +70,10 @@ func Map(state *lua.LState, name string, st interface{}) error {
 		return errors.New("parse table error")
 	}
 	return NewMapper(Option{}).Map(tbl, st)
+}
+
+func LValueDumps(value lua.LValue) ([]byte, error) {
+	return NewMapper(Option{}).Dumps(value)
 }
 
 // Id is an Option.NameFunc that returns given string as-is.
@@ -94,11 +103,10 @@ func ToGoValue(lv lua.LValue, opt Option) interface{} {
 		if maxn == 0 { // table
 			ret := make(map[interface{}]interface{})
 			v.ForEach(func(key, value lua.LValue) {
-				keystr := fmt.Sprint(ToGoValue(key, opt))
-				ret[opt.NameFunc(keystr)] = ToGoValue(value, opt)
+				ret[opt.NameFunc(fmt.Sprint(ToGoValue(key, opt)))] = ToGoValue(value, opt)
 			})
 			return ret
-		} else { // array
+		} else {
 			ret := make([]interface{}, 0, maxn)
 			for i := 1; i <= maxn; i++ {
 				ret = append(ret, ToGoValue(v.RawGetInt(i), opt))
