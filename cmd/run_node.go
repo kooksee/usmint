@@ -72,7 +72,7 @@ func NewRunNodeCmd() *cobra.Command {
 
 			// 初始化配置
 
-			kapp := app.New("kchain", config.DBDir())
+			kapp := app.New()
 			//kr := reactors.NewKReactor()
 			// 启动abci服务和tendermint节点
 			n, err := kn.NewNode(

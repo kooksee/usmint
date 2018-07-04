@@ -8,11 +8,9 @@ import (
 )
 
 var (
-	once       sync.Once
-	instance   *Config
-	l          tlog.Logger
-	configPath string
-	home       string
+	once     sync.Once
+	instance *Config
+	l        tlog.Logger
 )
 
 type AppConfig struct {

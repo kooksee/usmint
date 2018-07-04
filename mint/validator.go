@@ -7,8 +7,6 @@ import (
 	"github.com/kooksee/usmint/types/consts"
 	"github.com/kooksee/kdb"
 	"github.com/tendermint/abci/types"
-	"bytes"
-	"fmt"
 	"github.com/kooksee/usmint/cmn"
 )
 
@@ -67,6 +65,7 @@ func (v *Validator) Check() error {
 		return errors.New("Power值超过限制")
 	}
 
+	// 检查pubkey的格式是否合格
 	_, err := v.GetPubkey()
 	if err != nil {
 		return err
@@ -76,44 +75,55 @@ func (v *Validator) Check() error {
 
 // UpdateValidators 更新Validators
 func (v *Validator) UpdateValidator(val *types.Validator) error {
-	key := []byte(v.name + hex.EncodeToString(val.PubKey))
 
 	// power等于-1的时候,开放节点的权限
 	if val.Power == -1 {
-		value := bytes.NewBuffer(make([]byte, 0))
-		if err := types.WriteMessage(val, value); err != nil {
-			return errors.New(fmt.Sprintf("Error encoding validator: %v", err))
+		val.Power = 0
+
+		val1, err := json.Marshal(val)
+		if err != nil {
+			return err
 		}
 
-		v.db.Set(key, value.Bytes())
+		pk, err := crypto.PubKeyFromBytes(val.GetPubKey())
+		if err != nil {
+			return err
+		}
 
-		logger.Info("save node ok", "key", key)
-
-		val.Power = 0
-		return nil
+		logger.Info("save node ok", "key", string(val.PubKey))
+		return v.db.Set(pk.Address().Bytes(), val1)
 	}
 
 	// power等于-2的时候,删除节点
 	if val.Power == -2 {
-		v.db.Del(key)
-		logger.Info("delete node ok", "key", key)
-
 		val.Power = 0
-		return nil
-	}
 
-	// power小于等于0的时候,删除验证节点
-	if v.Power >= 0 {
-		value := bytes.NewBuffer(make([]byte, 0))
-		if err := types.WriteMessage(val, value); err != nil {
-			return errors.New(fmt.Sprintf("Error encoding validator: %v", err))
+		pk, err := crypto.PubKeyFromBytes(val.GetPubKey())
+		if err != nil {
+			return err
 		}
 
-		v.db.Set(key, value.Bytes())
+		logger.Info("delete node ok", "key", string(val.PubKey))
 
-		logger.Info("save node ok", "key", key)
+		return v.db.Del(pk.Address().Bytes())
 	}
-	return nil
+
+	if v.Power > 9 || v.Power < -2 {
+		return errors.New("power值超过限制")
+	}
+
+	val1, err := json.Marshal(val)
+	if err != nil {
+		return err
+	}
+
+	pk, err := crypto.PubKeyFromBytes(val.GetPubKey())
+	if err != nil {
+		return err
+	}
+
+	logger.Info("save node ok", "key", string(val.PubKey))
+	return v.db.Set(pk.Address().Bytes(), val1)
 }
 
 func (v *Validator) Decode(val []byte) error {

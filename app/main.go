@@ -14,6 +14,7 @@ type KApp struct {
 }
 
 func New() *KApp {
+	mint.Init()
 	return &KApp{m: mint.New()}
 }
 
@@ -50,17 +51,17 @@ func (app *KApp) CheckTx(txBytes []byte) types.ResponseCheckTx {
 }
 
 // Commit will panic if InitChain was not called
-func (app *KApp) Commit() (res types.ResponseCommit) {
+func (app *KApp) Commit() types.ResponseCommit {
 	return types.ResponseCommit{Data: app.m.Commit()}
 }
 
 func (app *KApp) Query(reqQuery types.RequestQuery) (res types.ResponseQuery) {
-	return res
+	return
 }
 
 // Save the validators in the merkle tree
 func (app *KApp) InitChain(req types.RequestInitChain) types.ResponseInitChain {
-	cmn.ErrPipeLog("app InitChain error", app.m.InitChain(req.Validators...))
+	cmn.MustNotErr("app InitChain error", app.m.InitChain(req.Validators...))
 	return types.ResponseInitChain{}
 }
 
