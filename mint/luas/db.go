@@ -40,9 +40,9 @@ func (c *CDb) Str(key string) string {
 }
 
 func (c *CDb) SetInt(key string, value int) {
-	c.db.WithTx(func(kh *kdb.KHBatch) error {
+	cmn.ErrPipeLog("CDb SetInt Error", c.db.WithTx(func(kh *kdb.KHBatch) error {
 		return kh.Set([]byte(key), cmn.Int64ToByte(int64(value)))
-	})
+	}))
 }
 
 func (c *CDb) Int(key string) int {
@@ -68,13 +68,10 @@ func (c *CDb) Float(key string) float64 {
 }
 
 func (c *CDb) SetTable(key string, m map[string]interface{}) {
-	cmn.ErrPipeLog("CDb SetTable Error", c.db.WithTx(func(kh *kdb.KHBatch) error {
+	c.db.WithTx(func(kh *kdb.KHBatch) error {
 		val, err := json.Marshal(m)
-		if err != nil {
-			return err
-		}
-		return kh.Set([]byte(key), val)
-	}))
+		return cmn.ErrPipeLog("CDb SetTable Error", err, kh.Set([]byte(key), val))
+	})
 }
 
 func (c *CDb) Table(key string) lua.LValue {
@@ -88,13 +85,3 @@ func (c *CDb) Table(key string) lua.LValue {
 	}
 	return v
 }
-
-/*
-
-合约元数据存储,合约的code，编号，发送者，公钥，以及nonce
-根据合约地址获取合约的code，获得合约的编号
-meta:address {code,编号,其他的元数据}
-静态数据放入数据库存储，合约数据用merker tree去存储，然后得到app hash
-不管中间逻辑多少，只要是结果是一样的，那就没问题
-4. 静态数据存储，code，编号，区块信息，tx
- */

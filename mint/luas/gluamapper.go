@@ -76,11 +76,6 @@ func LValueDumps(value lua.LValue) ([]byte, error) {
 	return NewMapper(Option{}).Dumps(value)
 }
 
-// Id is an Option.NameFunc that returns given string as-is.
-func Id(s string) string {
-	return s
-}
-
 var camelre = regexp.MustCompile(`_([a-z])`)
 // ToUpperCamelCase is an Option.NameFunc that converts strings from snake case to upper camel case.
 func ToUpperCamelCase(s string) string {

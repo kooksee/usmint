@@ -156,12 +156,12 @@ func BroadcastTxCommit(tx types.Tx) (*ctypes.ResultBroadcastTxCommit, error) {
 	deliverTxResCh := make(chan interface{})
 	q := types.EventQueryTxFor(tx)
 	err := eventBus.Subscribe(ctx, "mempool", q, deliverTxResCh)
+	defer eventBus.Unsubscribe(context.Background(), "mempool", q)
 	if err != nil {
 		err = errors.Wrap(err, "failed to subscribe to tx")
 		logger.Error("Error on broadcastTxCommit", "err", err)
 		return nil, fmt.Errorf("Error on broadcastTxCommit: %v", err)
 	}
-	defer eventBus.Unsubscribe(context.Background(), "mempool", q)
 
 	// broadcast the tx and register checktx callback
 	checkTxResCh := make(chan *abci.Response, 1)

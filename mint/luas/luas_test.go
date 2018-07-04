@@ -76,6 +76,7 @@ person = {
 	if err := Map(L,"person", &person); err != nil {
 		panic(err)
 	}
+
 	fmt.Printf("%s %d", person.Name, person.Age)
 }
 
