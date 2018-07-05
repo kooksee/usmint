@@ -5,6 +5,7 @@ import (
 	"github.com/kooksee/kdb"
 	kts "github.com/kooksee/usmint/types"
 	"encoding/binary"
+	"github.com/kooksee/usmint/cmn"
 )
 
 func New() *Mint {
@@ -50,6 +51,10 @@ func (m *Mint) ContractCall() error {
 	return nil
 }
 
+func (m *Mint) ContractQuery() error {
+	return nil
+}
+
 // InitChain 初始化chain
 func (m *Mint) InitChain(vals ... types.Validator) error {
 	for _, val := range vals {
@@ -87,10 +92,26 @@ func (m *Mint) CheckTx(data []byte) error {
 		return err
 	}
 
-	switch tx.Event {
-	case "":
+	pubkey := tx.GetPubKey()
 
+	switch tx.Event {
+	case "validator":
+		if err := cmn.ErrPipeLog(
+			"validator",
+			m.val.Check(),
+			m.val.Decode(data),
+			m.UpdateValidators(types.Validator{PubKey: m.val.PubKey, Power: m.val.Power})); err != nil {
+			return err
+		}
+
+	case "ctt.deploy":
+		m.ContractDeploy()
+	case "ctt.call":
+		m.ContractCall()
+	case "ctt.query":
+		m.ContractQuery()
 	}
+
 	return nil
 }
 
@@ -102,8 +123,10 @@ func (m *Mint) DeliverTx(data []byte) error {
 	}
 
 	switch tx.Event {
-	case "":
-
+	case "node.validator":
+	case "ctt.deploy":
+	case "ctt.call.*":
+	case "ctt.query.*":
 	}
 
 	return nil

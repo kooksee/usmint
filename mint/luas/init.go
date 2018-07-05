@@ -15,7 +15,6 @@ var cfg *config.Config
 var db *kdb.KDB
 
 func Init() {
-	json.Get([]byte(""), "")
 	cfg = config.DefaultCfg()
 	logger = config.GetLog().With("module", "luas")
 }

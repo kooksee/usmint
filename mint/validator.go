@@ -2,7 +2,6 @@ package mint
 
 import (
 	"github.com/tendermint/go-crypto"
-	"encoding/hex"
 	"errors"
 	"github.com/kooksee/usmint/types/consts"
 	"github.com/kooksee/kdb"
@@ -26,7 +25,7 @@ type Validator struct {
 	name   string
 	pubkey crypto.PubKey
 
-	PubKey string `json:"pubkey,omitempty" mapstructure:"pubkey"`
+	PubKey []byte `json:"pubkey,omitempty" mapstructure:"pubkey"`
 	Power  int64  `json:"power,omitempty" mapstructure:"power"`
 }
 
@@ -35,12 +34,7 @@ func (v *Validator) GetPubkey() (crypto.PubKey, error) {
 		return v.pubkey, nil
 	}
 
-	d, err := hex.DecodeString(v.PubKey)
-	if err != nil {
-		return nil, err
-	}
-
-	pk, err := crypto.PubKeyFromBytes(d)
+	pk, err := crypto.PubKeyFromBytes(v.PubKey)
 	if err != nil {
 		return nil, err
 	}
@@ -61,8 +55,9 @@ func (v *Validator) Has() bool {
 
 // Check 检查Power值和Pubkey
 func (v *Validator) Check() error {
-	if v.Power > 9 {
-		return errors.New("Power值超过限制")
+
+	if v.Power > 9 || v.Power < -2 {
+		return errors.New("power值超过限制")
 	}
 
 	// 检查pubkey的格式是否合格
@@ -76,6 +71,11 @@ func (v *Validator) Check() error {
 // UpdateValidators 更新Validators
 func (v *Validator) UpdateValidator(val *types.Validator) error {
 
+	pk, err := crypto.PubKeyFromBytes(val.GetPubKey())
+	if err != nil {
+		return err
+	}
+
 	// power等于-1的时候,开放节点的权限
 	if val.Power == -1 {
 		val.Power = 0
@@ -85,31 +85,14 @@ func (v *Validator) UpdateValidator(val *types.Validator) error {
 			return err
 		}
 
-		pk, err := crypto.PubKeyFromBytes(val.GetPubKey())
-		if err != nil {
-			return err
-		}
-
-		logger.Info("save node ok", "key", string(val.PubKey))
-		return v.db.Set(pk.Address().Bytes(), val1)
+		return cmn.ErrPipeLog("save node ok", v.db.Set(pk.Address().Bytes(), val1))
 	}
 
 	// power等于-2的时候,删除节点
 	if val.Power == -2 {
 		val.Power = 0
 
-		pk, err := crypto.PubKeyFromBytes(val.GetPubKey())
-		if err != nil {
-			return err
-		}
-
-		logger.Info("delete node ok", "key", string(val.PubKey))
-
-		return v.db.Del(pk.Address().Bytes())
-	}
-
-	if v.Power > 9 || v.Power < -2 {
-		return errors.New("power值超过限制")
+		return cmn.ErrPipeLog("delete node ok", v.db.Del(pk.Address().Bytes()))
 	}
 
 	val1, err := json.Marshal(val)
@@ -117,13 +100,7 @@ func (v *Validator) UpdateValidator(val *types.Validator) error {
 		return err
 	}
 
-	pk, err := crypto.PubKeyFromBytes(val.GetPubKey())
-	if err != nil {
-		return err
-	}
-
-	logger.Info("save node ok", "key", string(val.PubKey))
-	return v.db.Set(pk.Address().Bytes(), val1)
+	return cmn.ErrPipeLog("save node ok", v.db.Set(pk.Address().Bytes(), val1))
 }
 
 func (v *Validator) Decode(val []byte) error {

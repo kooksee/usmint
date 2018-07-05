@@ -12,9 +12,11 @@ var (
 	logger log.Logger
 	cfg    *config.Config
 	db     *kdb.KDB
+	cttm   *ContractManager
 )
 
 func Init() {
 	cfg = config.DefaultCfg()
+	cttm = &ContractManager{db: nil}
 	logger = config.GetLog().With("module", "mint")
 }

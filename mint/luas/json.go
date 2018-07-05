@@ -15,6 +15,10 @@ func JsonDecode(L *lua.LState) int {
 	return 1
 }
 
+func DecodeRaw(L *lua.LState, data []byte) (lua.LValue, error) {
+	return decodeRaw(L, data)
+}
+
 // Decode converts the JSON encoded data to Lua values.
 func decodeRaw(L *lua.LState, data []byte) (lua.LValue, error) {
 	var value interface{}
