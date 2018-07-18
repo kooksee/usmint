@@ -6,18 +6,21 @@
 -- To change this template use File | Settings | File Templates.
 --
 
+
 -- 全局变量
-init = {
+main = {
     w = 9
 }
 
-function hello(name, value)
+function main.hello(name, value)
     local t = Table("h")
     print(name, value, t)
+    r.set("key", "value")
+    r.hmset("key", { a = 1, b = 2 })
 end
 
-function test(name, value)
+function main.test(name, value)
     print(name, value)
 end
 
-
+return main

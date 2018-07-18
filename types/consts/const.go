@@ -22,8 +22,9 @@ const (
 
 	MetaPrefix  = "meta:"
 	StatePrefix = "state"
+	MinerPrefix = "miner"
 )
 
-func Meta(strs ... string) string {
-	return MetaPrefix + strings.Join(strs, "")
+func Meta(ms ... string) string {
+	return MetaPrefix + strings.Join(ms, "")
 }

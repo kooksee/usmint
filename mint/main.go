@@ -13,6 +13,7 @@ func New() *Mint {
 		state: NewState(),
 		db:    db,
 		val:   NewValidator(),
+		miner: NewMiner(),
 	}
 }
 
@@ -23,9 +24,10 @@ type Mint struct {
 	db         *kdb.KDB
 	val        *Validator
 	ctt        *Contract
+	miner      *Miner
 }
 
-func (m *Mint) GetState() *State {
+func (m *Mint) State() *State {
 	return m.state
 }
 
@@ -94,6 +96,11 @@ func (m *Mint) CheckTx(data []byte) error {
 
 	pubkey := tx.GetPubKey()
 
+	// 验证签名
+	// 检测合约是否在缓存当中,没有的就加载进来
+	// 加载lua类库
+	// 加载状态
+
 	switch tx.Event {
 	case "validator":
 		if err := cmn.ErrPipeLog(
@@ -142,4 +149,15 @@ func (m *Mint) BeginBlock(data []byte) error {
 // EndBlock 结束区块
 func (m *Mint) EndBlock(data []byte) ([]types.Validator, error) {
 	return m.valUpdates, nil
+}
+
+// SetMiner 设置挖矿节点
+func (m *Mint) SetMiner(v []byte, miner []byte) error {
+	// 根据验证节点设置矿工
+	// 每一个验证节点和非验证节点都是矿工
+	// 矿工是由节点自己设置的,如果节点不想设置矿工,也没什么关系
+
+	// 需要知道验证节点的地址,需要知道矿工的地址
+
+	return m.miner.Set(v, miner)
 }

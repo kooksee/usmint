@@ -62,9 +62,9 @@ func (self *List) Get(i int) interface{} {
 func (self *List) GetAsJson(i int) interface{} {
 	e := self.Get(i)
 
-	r, _ := json.Marshal(e)
+	r, _ := json.MarshalToString(e)
 
-	return string(r)
+	return r
 }
 
 // Appends value at the end of the slice. Panics when incompatible value

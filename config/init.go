@@ -14,25 +14,7 @@ var (
 )
 
 type AppConfig struct {
-	Name     string
-	Addr     string
-	DbPath   string `mapstructure:"db_path" yaml:"db_path"`
-	LogPath  string `mapstructure:"log_path" yaml:"log_path"`
-	LogLevel string `mapstructure:"log_level" yaml:"log_level"`
-
-	UdpPort int    `mapstructure:"udp_port" yaml:"udp_port"`
-	UdpHost string `mapstructure:"udp_host" yaml:"udp_host"`
-
-	HttpPort int    `mapstructure:"http_port" yaml:"http_port"`
-	HttpHost string `mapstructure:"http_host" yaml:"http_host"`
-
-	ExtIP string `mapstructure:"ext_ip" yaml:"ext_ip"`
-
-	AdvertiseUdpAddr  string `mapstructure:"advertise_udp_addr" yaml:"advertise_udp_addr"`
-	AdvertiseHttpAddr string `mapstructure:"advertise_http_addr" yaml:"advertise_http_addr"`
-
-	Seeds []string `mapstructure:"seeds" yaml:"seeds"`
-	PriV  string   `mapstructure:"priv" yaml:"priv"`
+	DbPath string `mapstructure:"db_path" yaml:"db_path"`
 }
 
 type Config struct {
@@ -62,7 +44,7 @@ func SetLog(l1 tlog.Logger) {
 	l = l1
 }
 
-func GetLog() tlog.Logger {
+func Log() tlog.Logger {
 	if l == nil {
 		panic("please init log")
 	}

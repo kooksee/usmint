@@ -18,5 +18,5 @@ var (
 func Init() {
 	cfg = config.DefaultCfg()
 	cttm = &ContractManager{db: nil}
-	logger = config.GetLog().With("module", "mint")
+	logger = config.Log().With("module", "mint")
 }

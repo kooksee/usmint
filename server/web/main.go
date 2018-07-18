@@ -4,7 +4,6 @@ import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"gopkg.in/go-playground/validator.v9"
-	"github.com/kooksee/kchain/reactors"
 )
 
 type CustomValidator struct {
@@ -15,7 +14,7 @@ func (cv *CustomValidator) Validate(i interface{}) error {
 	return cv.validator.Struct(i)
 }
 
-func Run(port string, reactor *reactors.KReactor) error {
+func Run(port string) error {
 	e := echo.New()
 
 	// Middleware
@@ -46,19 +45,11 @@ func Run(port string, reactor *reactors.KReactor) error {
 	// /tx?result=true
 	v1.POST("/tx", txPost)
 
-	// /tx/123456??result=true
+	// /tx/123456?result=true
 	v1.GET("/tx/:txId", txGet)
 
 	// /
 	v1.POST("/tx1", txPost1)
-
-	//go func() {
-	//	for {
-	//		reactor.Broadcast([]byte("hello"))
-	//		time.Sleep(time.Second * 3)
-	//	}
-	//
-	//}()
 
 	// Start server
 	return e.Start(f(":%s", port))

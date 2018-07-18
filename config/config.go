@@ -22,12 +22,5 @@ func DefaultCfg() *Config {
 
 func DefaultAppConfig() *AppConfig {
 	return &AppConfig{
-		UdpPort:           8081,
-		UdpHost:           "0.0.0.0",
-		HttpHost:          "0.0.0.0",
-		HttpPort:          8080,
-		AdvertiseHttpAddr: "",
-		AdvertiseUdpAddr:  "",
-		LogLevel:          "debug",
 	}
 }

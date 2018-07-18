@@ -1,5 +1,9 @@
 package app
 
+/*
+实现tendermint abci的业务逻辑
+ */
+
 import (
 	"github.com/tendermint/abci/types"
 	"github.com/kooksee/kchain/types/code"
@@ -14,6 +18,7 @@ type KApp struct {
 }
 
 func New() *KApp {
+	// 要先初始化才能进行下一步操作
 	mint.Init()
 	return &KApp{m: mint.New()}
 }
@@ -21,9 +26,12 @@ func New() *KApp {
 // 实现abci的Info协议
 func (app *KApp) Info(req types.RequestInfo) (res types.ResponseInfo) {
 
-	res.Data = config.DefaultCfg().Moniker
-	res.LastBlockHeight = app.m.GetState().Height
-	res.LastBlockAppHash = app.m.GetState().AppHash
+	res.Data, _ = json.MarshalToString(map[string]interface{}{
+		"name":     config.DefaultCfg().Moniker,
+		"chain_id": "main",
+	})
+	res.LastBlockHeight = app.m.State().Height
+	res.LastBlockAppHash = app.m.State().AppHash
 	res.Version = req.Version
 
 	return
