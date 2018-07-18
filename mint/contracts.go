@@ -6,6 +6,7 @@ import (
 	"github.com/layeh/gopher-luar"
 	"github.com/kooksee/usmint/mint/luas"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/kooksee/usmint/cmn"
 )
 
 type ContractManager struct {
@@ -18,18 +19,29 @@ func (c *ContractManager) Contract(addr []byte) *lua.LState {
 		return ll
 	}
 
+	// 得到合约地址
 	d, err := c.db.Get(addr)
 	if err != nil {
 		panic(err.Error())
 	}
 
 	l := lua.NewState()
-	if err := l.DoString(string(d)); err != nil {
-		panic(err.Error())
-	}
+
+	// 加载lua lib
+	c.loadLib(l)
+
+	cmn.MustNotErr("lua lib exec error", l.DoString(string(d)))
 
 	c.c[string(addr)] = l
 	return l
+}
+
+func (c *ContractManager) loadLib(l *lua.LState) {
+	//	加载系统类库
+	l.SetGlobal("field", luar.New(l, c))
+
+	// 加载数据库
+	l.SetGlobal("field", luar.New(l, c))
 }
 
 type Contract struct {
@@ -68,14 +80,6 @@ func (c *Contract) CallWithRet(method string, args []byte) ([]byte, error) {
 	ret := c.l.Get(-1)
 	c.l.Pop(1)
 	return luas.LValueDumps(ret)
-}
-
-func (c *Contract) LoadLib() {
-	//	加载系统类库
-	c.l.SetGlobal("field", luar.New(c.l, c))
-
-	// 加载数据库
-	c.l.SetGlobal("field", luar.New(c.l, c))
 }
 
 func (c *Contract) Deploy() {
