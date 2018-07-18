@@ -7,12 +7,12 @@ func NewMsg() *Msg {
 type Msg struct {
 }
 
-// 完整的calldata
+// 调用数据
 func (m *Msg) Data() []byte {
 	return nil
 }
 
-// ﻿消息的发送者（当前调用）
+// 发送地址
 func (m *Msg) Sender() []byte {
 	return nil
 }

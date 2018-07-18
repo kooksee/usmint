@@ -16,7 +16,7 @@ func (a *Address) Balance() uint64 {
 	return 0
 }
 
-// ﻿向 地址类型 发送数量为 amount 的 Wei，失败时抛出异常，发送 2300 gas 的矿工费，不可调节。
+// 向地址中转账
 func (a *Address) Transfer(addr []byte, amount uint64) error {
 	return nil
 }

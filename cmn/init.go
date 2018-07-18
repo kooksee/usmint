@@ -12,5 +12,5 @@ var cfg *config.Config
 
 func Init() {
 	cfg = config.DefaultCfg()
-	logger = config.GetLog().With("module", "cmn")
+	logger = config.Log().With("module", "cmn")
 }

@@ -94,7 +94,7 @@ func (m *Mint) CheckTx(data []byte) error {
 		return err
 	}
 
-	pubkey := tx.GetPubKey()
+	//pubkey := tx.GetPubKey()
 
 	// 验证签名
 	// 检测合约是否在缓存当中,没有的就加载进来
