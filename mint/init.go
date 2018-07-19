@@ -17,6 +17,7 @@ var (
 
 func Init() {
 	cfg = config.DefaultCfg()
-	cttm = &ContractManager{db: nil}
+	db = cfg.App.Db()
+	cttm = &ContractManager{db: db.KHash([]byte("contracts"))}
 	logger = config.Log().With("module", "mint")
 }

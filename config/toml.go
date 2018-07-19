@@ -2,7 +2,6 @@ package config
 
 import (
 	"bytes"
-	"os"
 	"path/filepath"
 	"text/template"
 
@@ -44,7 +43,7 @@ func EnsureRoot(rootDir string) {
 // XXX: this func should probably be called by cmd/tendermint/commands/init.go
 // alongside the writing of the genesis.json and priv_validator.json
 func writeDefaultCondigFile(configFilePath string) {
-	WriteConfigFile(configFilePath, DefaultConfig())
+	WriteConfigFile(configFilePath, DefaultCfg())
 }
 
 // WriteConfigFile renders config using the template and writes it to configFilePath.
@@ -236,53 +235,6 @@ index_tags = "{{ .TxIndex.IndexTags }}"
 # IndexAllTags (i.e. when given both, IndexTags will be indexed).
 index_all_tags = {{ .TxIndex.IndexAllTags }}
 `
-
-/****** these are for test settings ***********/
-
-func ResetTestRoot(testName string) *Config {
-	rootDir := os.ExpandEnv("$HOME/.tendermint_test")
-	rootDir = filepath.Join(rootDir, testName)
-	// Remove ~/.tendermint_test_bak
-	if cmn.FileExists(rootDir + "_bak") {
-		if err := os.RemoveAll(rootDir + "_bak"); err != nil {
-			cmn.PanicSanity(err.Error())
-		}
-	}
-	// Move ~/.tendermint_test to ~/.tendermint_test_bak
-	if cmn.FileExists(rootDir) {
-		if err := os.Rename(rootDir, rootDir+"_bak"); err != nil {
-			cmn.PanicSanity(err.Error())
-		}
-	}
-	// Create new dir
-	if err := cmn.EnsureDir(rootDir, 0700); err != nil {
-		cmn.PanicSanity(err.Error())
-	}
-	if err := cmn.EnsureDir(filepath.Join(rootDir, defaultConfigDir), 0700); err != nil {
-		cmn.PanicSanity(err.Error())
-	}
-	if err := cmn.EnsureDir(filepath.Join(rootDir, defaultDataDir), 0700); err != nil {
-		cmn.PanicSanity(err.Error())
-	}
-
-	baseConfig := DefaultBaseConfig()
-	configFilePath := filepath.Join(rootDir, defaultConfigFilePath)
-	genesisFilePath := filepath.Join(rootDir, baseConfig.Genesis)
-	privFilePath := filepath.Join(rootDir, baseConfig.PrivValidator)
-
-	// Write default config file if missing.
-	if !cmn.FileExists(configFilePath) {
-		writeDefaultCondigFile(configFilePath)
-	}
-	if !cmn.FileExists(genesisFilePath) {
-		cmn.MustWriteFile(genesisFilePath, []byte(testGenesis), 0644)
-	}
-	// we always overwrite the priv val
-	cmn.MustWriteFile(privFilePath, []byte(testPrivValidator), 0644)
-
-	config := TestConfig().SetRoot(rootDir)
-	return config
-}
 
 var testGenesis = `{
   "genesis_time": "0001-01-01T00:00:00.000Z",

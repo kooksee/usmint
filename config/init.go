@@ -3,8 +3,10 @@ package config
 import (
 	"sync"
 
+	tcfg "github.com/tendermint/tendermint/config"
 	tlog "github.com/tendermint/tmlibs/log"
 	"github.com/go-redis/redis"
+	"github.com/kooksee/kdb"
 )
 
 var (
@@ -16,6 +18,7 @@ var (
 type AppConfig struct {
 	RedisUrl string `mapstructure:"redis_url"`
 	r        *redis.Client
+	db       *kdb.KDB
 }
 
 func (a *AppConfig) InitRedis() {
@@ -34,7 +37,41 @@ func (a *AppConfig) InitRedis() {
 }
 
 func (a *AppConfig) Redis() *redis.Client {
+	if a.r == nil {
+		a.InitRedis()
+	}
 	return a.r
+}
+
+func (a *AppConfig) Db() *kdb.KDB {
+	if a.db == nil {
+		kdb.InitKdb()
+		a.db = kdb.GetKdb()
+	}
+	return a.db
+}
+
+type Config struct {
+	// Top level options use an anonymous struct
+	tcfg.BaseConfig `mapstructure:",squash"`
+
+	// Options for services
+	RPC       *tcfg.RPCConfig       `mapstructure:"rpc"`
+	P2P       *tcfg.P2PConfig       `mapstructure:"p2p"`
+	Mempool   *tcfg.MempoolConfig   `mapstructure:"mempool"`
+	Consensus *tcfg.ConsensusConfig `mapstructure:"consensus"`
+	TxIndex   *tcfg.TxIndexConfig   `mapstructure:"tx_index"`
+	App       *AppConfig            `mapstructure:"app"`
+}
+
+// SetRoot sets the RootDir for all Config structs
+func (cfg *Config) SetRoot(root string) *Config {
+	cfg.BaseConfig.RootDir = root
+	cfg.RPC.RootDir = root
+	cfg.P2P.RootDir = root
+	cfg.Mempool.RootDir = root
+	cfg.Consensus.RootDir = root
+	return cfg
 }
 
 func SetLog(l1 tlog.Logger) {
@@ -46,18 +83,4 @@ func Log() tlog.Logger {
 		panic("please init log")
 	}
 	return l
-}
-
-func DefaultAppConfig() *AppConfig {
-	return &AppConfig{
-		RedisUrl: "localhost:6379",
-	}
-}
-
-func DefaultCfg() *Config {
-	once.Do(func() {
-		instance = DefaultConfig()
-	})
-
-	return instance
 }

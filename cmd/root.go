@@ -35,7 +35,7 @@ func ParseConfig() (*k.Config, error) {
 		return nil, err
 	}
 	conf.SetRoot(conf.RootDir)
-	cfg.EnsureRoot(conf.RootDir)
+	k.EnsureRoot(conf.RootDir)
 	return conf, err
 }
 

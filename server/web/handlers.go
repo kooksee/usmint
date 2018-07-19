@@ -102,11 +102,11 @@ func block(c echo.Context) error {
 
 func blockchain(c echo.Context) error {
 	minh := big.NewInt(0)
-	minh.SetString(c.QueryParam("height"), 10)
+	minh.SetString(c.QueryParam("min_height"), 10)
 	min := minh.Int64()
 
 	maxh := big.NewInt(0)
-	maxh.SetString(c.QueryParam("height"), 10)
+	maxh.SetString(c.QueryParam("max_height"), 10)
 	max := maxh.Int64()
 
 	info, err := core.BlockchainInfo(min, max)
@@ -130,7 +130,7 @@ func broadcast_tx_async(c echo.Context) error {
 
 func tx(c echo.Context) error {
 
-	ret, _ := hex.DecodeString(c.QueryParam("tx"))
+	ret, _ := hex.DecodeString(c.Param("id"))
 	info, err := core.Tx(ret, false)
 	if err != nil {
 		return c.String(http.StatusBadRequest, err.Error())

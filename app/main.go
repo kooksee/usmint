@@ -26,10 +26,7 @@ func New() *KApp {
 // 实现abci的Info协议
 func (app *KApp) Info(req types.RequestInfo) (res types.ResponseInfo) {
 
-	res.Data, _ = json.MarshalToString(map[string]interface{}{
-		"name":     config.DefaultCfg().Moniker,
-		"chain_id": "main",
-	})
+	res.Data = config.DefaultCfg().Moniker
 	res.LastBlockHeight = app.m.State().Height
 	res.LastBlockAppHash = app.m.State().AppHash
 	res.Version = req.Version
