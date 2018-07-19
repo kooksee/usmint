@@ -126,11 +126,12 @@ func (m *Mint) CheckTx(data []byte) error {
 		//	投票智能合约
 	case "vote":
 
-	case "db.mSet":
-	case "db.mSet":
-	case "db.mSet":
-	case "db.mSet":
-	case "db.mSet":
+	//case "db.mSet":
+	//case "db.mSet":
+	//case "db.mSet":
+	//	400739
+	//case "db.mSet":
+	//case "db.mSet":
 
 	}
 
