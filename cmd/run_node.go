@@ -1,20 +1,18 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 
-	cmn "github.com/tendermint/tmlibs/common"
+	"github.com/tendermint/tmlibs/common"
 
 	pvm "github.com/tendermint/tendermint/types/priv_validator"
 
-	"time"
-
 	kn "github.com/kooksee/usmint/node"
 	"github.com/kooksee/usmint/app"
-	"encoding/json"
 	"github.com/kooksee/usmint/proxy"
+	"github.com/kooksee/usmint/server/web"
+	"strings"
+	"github.com/kooksee/usmint/cmn"
 )
 
 // AddNodeFlags exposes some common configuration options on the command-line
@@ -52,16 +50,6 @@ func AddNodeFlags(cmd *cobra.Command) *cobra.Command {
 	return cmd
 }
 
-func sdd(node *kn.Node) {
-	for {
-		for _, p := range node.Switch().Peers().List() {
-			p.Send(byte(0x60), []byte("dvvhvvhkvvsvgcvsgvs\n\n\n\n\n\n\n\n"))
-		}
-
-		time.Sleep(time.Second * 2)
-	}
-}
-
 // NewRunNodeCmd returns the command that allows the CLI to start a
 // node. It can be used with a custom PrivValidator and in-process ABCI application.
 func NewRunNodeCmd() *cobra.Command {
@@ -70,61 +58,27 @@ func NewRunNodeCmd() *cobra.Command {
 		Short: "Run the kchain node",
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			// 初始化配置
-
-			kapp := app.New()
-			//kr := reactors.NewKReactor()
 			// 启动abci服务和tendermint节点
 			n, err := kn.NewNode(
 				config,
 				pvm.LoadFilePV(config.PrivValidatorFile()),
-				proxy.NewLocalClientCreator(kapp),
+				proxy.NewLocalClientCreator(app.New()),
 				kn.DefaultGenesisDocProviderFunc(config),
 				kn.DefaultDBProvider,
 				logger,
 			)
-			if err != nil {
-				return fmt.Errorf("Failed to create node: %v", err)
+			cmn.MustNotErr("Failed to start node", err, n.Start())
+			logger.Info("Started node", "nodeInfo", n.Switch().NodeInfo())
+
+			// web server 启动
+			{
+				web.Init()
+				addr := strings.Split(config.RPC.ListenAddress, ":")
+				cmn.MustNotErr("web server 启动失败", web.Run(addr[len(addr)-1]))
 			}
 
-			go sdd(n)
-
-			// 新加入节点的过滤逻辑
-			// n.Switch().SetIDFilter()
-
-			if err := n.Start(); err != nil {
-				return fmt.Errorf("Failed to start node: %v", err)
-			} else {
-				logger.Info("Started node", "nodeInfo", n.Switch().NodeInfo())
-			}
-
-			fmt.Println(n.NodeInfo().Channels)
-			for _, p := range n.Switch().Peers().List() {
-				fmt.Println(json.Marshal(p.NodeInfo().String()))
-				fmt.Println(p.String())
-			}
-			for _, r := range n.Switch().Reactors() {
-				fmt.Println(r.String())
-				d1, _ := json.Marshal(r.GetChannels())
-				fmt.Println(string(d1))
-			}
-
-			// 添加自己的reactor
-			//kr := reactors.NewKReactor()
-			//n.Switch().AddReactor(kr.Name, kr)
-
-			//nn := n.Switch().NodeInfo()
-			//nn.Channels = append(nn.Channels, kr.ChId)
-
-			//addr := strings.Split(config.ProxyApp, ":")
-			//if err := web.Run(addr[len(addr)-1], kr); err != nil {
-			//	logger.Error(err.Error())
-			//	return err
-			//}
-
-			cmn.TrapSignal(func() {
-				logger.Error("程序推出")
-				n.Stop()
+			common.TrapSignal(func() {
+				cmn.MustNotErr("程序推出", n.Stop())
 			})
 
 			return nil

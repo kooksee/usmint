@@ -8,6 +8,7 @@ import (
 /*
 gopher-lua redis 操作
 智能合约跟redis进行交互和数据存储
+当如果是查询操作的话，所有写入操作全部都失败
  */
 
 func NewRedis(contractAddress []byte) *RedisDb {

@@ -21,7 +21,7 @@ type Transaction struct {
 	Signature string `json:"sign,omitempty"`
 	Data      string `json:"data,omitempty"`
 	Event     string `json:"event,omitempty"`
-	Timestamp int64  `json:"time,omitempty"`
+	Timestamp uint64 `json:"time,omitempty"`
 	hash      []byte
 	pubkey    *ecdsa.PublicKey
 }

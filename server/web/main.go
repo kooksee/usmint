@@ -40,16 +40,11 @@ func Run(port string) error {
 
 	// e.Use(middleware.Proxy(middleware.NewRoundRobinBalancer([]*middleware.ProxyTarget{{URL: url1}, {URL: url2}})))
 
-	v1 := e.Group("v1")
+	// 向链上发送tx,需要用户自己传入一个ID
+	e.POST("/", txPost)
 
-	// /tx?result=true
-	v1.POST("/tx", txPost)
-
-	// /tx/123456?result=true
-	v1.GET("/tx/:txId", txGet)
-
-	// /
-	v1.POST("/tx1", txPost1)
+	// 获得异步发送的结果
+	e.GET("/tx/:id", txPost)
 
 	// Start server
 	return e.Start(f(":%s", port))

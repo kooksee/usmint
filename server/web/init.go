@@ -2,21 +2,25 @@ package web
 
 import (
 	"github.com/json-iterator/go"
-	"github.com/tendermint/tmlibs/log"
-
-	kcfg "github.com/kooksee/kchain/cfg"
 	"fmt"
-	"github.com/kooksee/kchain/types"
+	"github.com/kooksee/usmint/types"
+	"github.com/tendermint/tmlibs/log"
+	"github.com/kooksee/usmint/config"
 )
 
 var (
-	cfg    = kcfg.GetConfig()
 	json   = jsoniter.ConfigCompatibleWithStandardLibrary
 	logger log.Logger
+	cfg    *config.Config
 )
+
+func Init() {
+	cfg = config.DefaultCfg()
+	logger = config.Log().With("module", "web")
+}
 
 func f(format string, a ...interface{}) string {
 	return fmt.Sprintf(format, a...)
 }
 
-type m types.M
+type m types.Map
