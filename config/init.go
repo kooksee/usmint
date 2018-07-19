@@ -5,6 +5,8 @@ import (
 
 	tcfg "github.com/tendermint/tendermint/config"
 	tlog "github.com/tendermint/tmlibs/log"
+	"github.com/go-redis/redis"
+	"github.com/kooksee/usmint/cmn"
 )
 
 var (
@@ -14,7 +16,21 @@ var (
 )
 
 type AppConfig struct {
-	DbPath string `mapstructure:"db_path" yaml:"db_path"`
+	RedisUrl string `mapstructure:"redis_url"`
+	r        *redis.Client
+}
+
+func (a *AppConfig) InitRedis() {
+	opt, err := redis.ParseURL(a.RedisUrl)
+	cmn.MustNotErr("解析redis url", err)
+
+	a.r = redis.NewClient(opt)
+
+	cmn.MustNotErr("redis ping", a.r.Ping().Err())
+}
+
+func (a *AppConfig) Redis() *redis.Client {
+	return a.r
 }
 
 type Config struct {

@@ -44,7 +44,7 @@ func Run(port string) error {
 	e.POST("/", txPost)
 
 	// 获得异步发送的结果
-	e.GET("/tx/:id", txPost)
+	e.GET("/:id", txGet)
 
 	// Start server
 	return e.Start(f(":%s", port))

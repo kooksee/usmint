@@ -22,5 +22,6 @@ func DefaultCfg() *Config {
 
 func DefaultAppConfig() *AppConfig {
 	return &AppConfig{
+		RedisUrl: "localhost:6379",
 	}
 }
