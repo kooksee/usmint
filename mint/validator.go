@@ -36,7 +36,7 @@ func (v *Validator) GetPubkey() (crypto.PubKey, error) {
 
 	pk, err := crypto.PubKeyFromBytes(v.PubKey)
 	if err != nil {
-		return nil, err
+		return nil, cmn.ErrPipeLog("validator parse pubkey", err)
 	}
 
 	v.pubkey = pk
@@ -49,7 +49,7 @@ func (v *Validator) Has() bool {
 		return false
 	}
 	b, err := v.db.Exist(pk.Address().Bytes())
-	cmn.ErrPipeLog("Validator Has error", err)
+	cmn.ErrPipeLog("validator has error", err)
 	return b
 }
 
@@ -70,41 +70,32 @@ func (v *Validator) Check() error {
 
 // UpdateValidators 更新Validators
 func (v *Validator) UpdateValidator(val *types.Validator) error {
+	logger.Error("update node", "node", val.String())
 
 	pk, err := crypto.PubKeyFromBytes(val.GetPubKey())
-	if err != nil {
+	if err = cmn.ErrPipeLog("pubkey parse error", err); err != nil {
 		return err
 	}
 
 	// power等于-1的时候,开放节点的权限
 	if val.Power == -1 {
 		val.Power = 0
-
 		val1, err := json.Marshal(val)
-		if err != nil {
-			return err
-		}
-
-		return cmn.ErrPipeLog("save node ok", v.db.Set(pk.Address().Bytes(), val1))
+		return cmn.ErrPipeLog("save node error", err, v.db.Set(pk.Address().Bytes(), val1))
 	}
 
 	// power等于-2的时候,删除节点
 	if val.Power == -2 {
 		val.Power = 0
-
-		return cmn.ErrPipeLog("delete node ok", v.db.Del(pk.Address().Bytes()))
+		return cmn.ErrPipeLog("delete node error", v.db.Del(pk.Address().Bytes()))
 	}
 
 	val1, err := json.Marshal(val)
-	if err != nil {
-		return err
-	}
-
-	return cmn.ErrPipeLog("save node ok", v.db.Set(pk.Address().Bytes(), val1))
+	return cmn.ErrPipeLog("save node error", err, v.db.Set(pk.Address().Bytes(), val1))
 }
 
 func (v *Validator) Decode(val []byte) error {
-	return json.Unmarshal(val, v)
+	return cmn.ErrPipeLog("validator decode error", json.Unmarshal(val, v))
 }
 
 func (v *Validator) Delete() error {

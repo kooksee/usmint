@@ -11,8 +11,8 @@ func initUrls(e *echo.Echo) {
 	e.GET("/num_unconfirmed_txs", num_unconfirmed_txs)
 	e.GET("/status", status)
 	e.GET("/unconfirmed_txs", unconfirmed_txs)
-	e.GET("/block", block)
+	e.GET("/block/:height", block)
 	e.GET("/blockchain", blockchain)
-	e.GET("/broadcast_tx", broadcast_tx_async)
+	e.GET("/broadcast_tx/:tx", broadcast_tx_async)
 	e.GET("/tx/:id", tx)
 }

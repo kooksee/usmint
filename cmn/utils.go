@@ -58,3 +58,7 @@ func SortStruct(s interface{}) ([]byte, error) {
 	}
 	return b1, nil
 }
+
+func Fn(fn func(args ... interface{}) error) error {
+	return fn()
+}

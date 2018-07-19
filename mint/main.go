@@ -44,8 +44,16 @@ func (m *Mint) UpdateValidators(vals ... types.Validator) error {
 }
 
 // ContractDeploy 部署合约
-func (m *Mint) ContractDeploy() error {
-	return nil
+func (m *Mint) ContractDeploy(tx *kts.Transaction) (string, error) {
+	// 获取合约内容
+	// 存储合约内容
+	// 加载合约内容
+	// 获得合约ID
+	// 把合约ID返还给用户
+
+	//tx.Data
+
+	return "合约地址", nil
 }
 
 // ContractCall 调用合约
@@ -53,8 +61,9 @@ func (m *Mint) ContractCall() error {
 	return nil
 }
 
-func (m *Mint) ContractQuery() error {
-	return nil
+// ContractQuery 调用查询调用
+func (m *Mint) ContractQuery() ([]byte, error) {
+	return nil, nil
 }
 
 // InitChain 初始化chain
@@ -104,7 +113,7 @@ func (m *Mint) CheckTx(data []byte) error {
 	switch tx.Event {
 	case "validator":
 		if err := cmn.ErrPipeLog(
-			"validator",
+			"CheckTx validator error",
 			m.val.Check(),
 			m.val.Decode(data),
 			m.UpdateValidators(types.Validator{PubKey: m.val.PubKey, Power: m.val.Power})); err != nil {
@@ -112,7 +121,7 @@ func (m *Mint) CheckTx(data []byte) error {
 		}
 
 	case "ctt.deploy":
-		m.ContractDeploy()
+		m.ContractDeploy(tx)
 	case "ctt.call":
 		m.ContractCall()
 	case "ctt.query":

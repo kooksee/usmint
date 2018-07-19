@@ -7,6 +7,8 @@ import (
 	"math/big"
 	tp "github.com/tendermint/tendermint/types"
 	"encoding/hex"
+	"github.com/kooksee/usmint/types"
+	pvm "github.com/tendermint/tendermint/types/priv_validator"
 )
 
 func index(c echo.Context) error {
@@ -90,7 +92,7 @@ func unconfirmed_txs(c echo.Context) error {
 
 func block(c echo.Context) error {
 	a := big.NewInt(0)
-	a.SetString(c.QueryParam("height"), 10)
+	a.SetString(c.Param("height"), 10)
 	ret := a.Int64()
 	info, err := core.Block(&ret)
 	if err != nil {
@@ -118,9 +120,19 @@ func blockchain(c echo.Context) error {
 }
 
 func broadcast_tx_async(c echo.Context) error {
+	ret, _ := hex.DecodeString(c.Param("tx"))
+	tx, err := types.DecodeTx(ret)
+	if err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
 
-	ret, _ := hex.DecodeString(c.QueryParam("tx"))
-	info, err := core.BroadcastTxAsync(tp.Tx(ret))
+	// 签名
+	sign, err := tx.Sign(pvm.LoadFilePV(cfg.PrivValidatorFile()).PrivKey)
+	if err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	info, err := core.BroadcastTxAsync(tp.Tx(sign))
 	if err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}

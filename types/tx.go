@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"errors"
 	"crypto/ecdsa"
-	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/tendermint/go-crypto"
 )
 
 func DecodeTx(bs []byte) (*Transaction, error) {
-	tx := &Transaction{}
+	tx := NewTransaction()
 	return tx, json.Unmarshal(bs, tx)
 }
 
@@ -18,10 +18,11 @@ func NewTransaction() *Transaction {
 }
 
 type Transaction struct {
-	Signature string `json:"sign,omitempty"`
-	Data      string `json:"data,omitempty"`
-	Event     string `json:"event,omitempty"`
-	Timestamp uint64 `json:"time,omitempty"`
+	Signature string `json:"sign"`
+	Pubkey    string `json:"pubkey"`
+	Data      string `json:"data"`
+	Event     string `json:"event"`
+	Timestamp uint64 `json:"time"`
 	hash      []byte
 	pubkey    *ecdsa.PublicKey
 }
@@ -39,7 +40,6 @@ func (t *Transaction) Decode(bs []byte) error {
 func (t *Transaction) Hash() ([]byte, error) {
 	if len(t.hash) != 0 {
 		return t.hash, nil
-
 	}
 
 	if len(t.Signature) == 0 {
@@ -51,8 +51,7 @@ func (t *Transaction) Hash() ([]byte, error) {
 		return nil, err
 	}
 
-	t.hash = crypto.Keccak256(sign)
-
+	t.hash = crypto.Ripemd160(sign)
 	return t.hash, nil
 }
 
@@ -65,22 +64,21 @@ func (t *Transaction) signMsg() []byte {
 		return nil
 	}
 
-	return []byte(fmt.Sprintf("%s%s%d", t.Data, t.Event, t.Timestamp))
+	if t.Timestamp == 0 {
+		return nil
+	}
+
+	return crypto.Ripemd160([]byte(fmt.Sprintf("%s%s%d", t.Data, t.Event, t.Timestamp)))
 }
 
 // Sign 签名
-func (t *Transaction) Sign(priv *ecdsa.PrivateKey) ([]byte, error) {
+func (t *Transaction) Sign(priv crypto.PrivKey) ([]byte, error) {
 	msg := t.signMsg()
 	if msg == nil {
 		return nil, errors.New("签名数据为空")
 	}
 
-	sig, err := crypto.Sign(msg, priv)
-	if err != nil {
-		return nil, errors.New("签名失败")
-	}
-
-	return sig, nil
+	return priv.Sign(msg).Bytes(), nil
 }
 
 func (t *Transaction) GetPubKey() *ecdsa.PublicKey {
@@ -94,11 +92,24 @@ func (t *Transaction) VerifySign() error {
 		return err
 	}
 
-	pubkey, err := crypto.Ecrecover(t.signMsg(), sign)
+	s, err := crypto.SignatureFromBytes(sign)
 	if err != nil {
+		return err
+	}
+
+	pubkey, err := hex.DecodeString(t.Pubkey)
+	if err != nil {
+		return err
+	}
+
+	pk, err := crypto.PubKeyFromBytes(pubkey)
+	if err != nil {
+		return err
+	}
+
+	if !pk.VerifyBytes(t.signMsg(), s) {
 		return errors.New("transaction verify false")
 	}
-	t.pubkey = crypto.ToECDSAPub(pubkey)
 
 	return nil
 }

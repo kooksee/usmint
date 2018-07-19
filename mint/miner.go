@@ -23,14 +23,14 @@ type Miner struct {
 }
 
 // 设置矿工地址
+// v 验证节点
+// mn 矿工地址
 func (m Miner) Set(v []byte, mn []byte) error {
-	//	验证节点和矿工地址
 	return m.db.Set(v, mn)
 }
 
 // 删除矿工地址
+// v 验证节点
 func (m Miner) Delete(v []byte) error {
-	//	验证节点和矿工地址
-
 	return m.db.Del(v)
 }
