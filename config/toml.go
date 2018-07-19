@@ -235,34 +235,3 @@ index_tags = "{{ .TxIndex.IndexTags }}"
 # IndexAllTags (i.e. when given both, IndexTags will be indexed).
 index_all_tags = {{ .TxIndex.IndexAllTags }}
 `
-
-var testGenesis = `{
-  "genesis_time": "0001-01-01T00:00:00.000Z",
-  "chain_id": "tendermint_test",
-  "validators": [
-    {
-      "pub_key": {
-        "type": "AC26791624DE60",
-        "value":"AT/+aaL1eB0477Mud9JMm8Sh8BIvOYlPGC9KkIUmFaE="
-      },
-      "power": 10,
-      "name": ""
-    }
-  ],
-  "app_hash": ""
-}`
-
-var testPrivValidator = `{
-  "address": "849CB2C877F87A20925F35D00AE6688342D25B47",
-  "pub_key": {
-    "type": "AC26791624DE60",
-    "value": "AT/+aaL1eB0477Mud9JMm8Sh8BIvOYlPGC9KkIUmFaE="
-  },
-  "priv_key": {
-    "type": "954568A3288910",
-    "value": "EVkqJO/jIXp3rkASXfh9YnyToYXRXhBr6g9cQVxPFnQBP/5povV4HTjvsy530kybxKHwEi85iU8YL0qQhSYVoQ=="
-  },
-  "last_height": 0,
-  "last_round": 0,
-  "last_step": 0
-}`

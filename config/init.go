@@ -7,6 +7,7 @@ import (
 	tlog "github.com/tendermint/tmlibs/log"
 	"github.com/go-redis/redis"
 	"github.com/kooksee/kdb"
+	"path/filepath"
 )
 
 var (
@@ -43,14 +44,6 @@ func (a *AppConfig) Redis() *redis.Client {
 	return a.r
 }
 
-func (a *AppConfig) Db() *kdb.KDB {
-	if a.db == nil {
-		kdb.InitKdb()
-		a.db = kdb.GetKdb()
-	}
-	return a.db
-}
-
 type Config struct {
 	// Top level options use an anonymous struct
 	tcfg.BaseConfig `mapstructure:",squash"`
@@ -62,6 +55,14 @@ type Config struct {
 	Consensus *tcfg.ConsensusConfig `mapstructure:"consensus"`
 	TxIndex   *tcfg.TxIndexConfig   `mapstructure:"tx_index"`
 	App       *AppConfig            `mapstructure:"app"`
+}
+
+func (a *Config) Db() *kdb.KDB {
+	if a.App.db == nil {
+		kdb.InitKdb(filepath.Join(a.DBDir(), "app.db"))
+		a.App.db = kdb.GetKdb()
+	}
+	return a.App.db
 }
 
 // SetRoot sets the RootDir for all Config structs

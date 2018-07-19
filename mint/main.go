@@ -23,8 +23,8 @@ type Mint struct {
 	state      *State
 	db         *kdb.KDB
 	val        *Validator
-	ctt        *Contract
 	miner      *Miner
+	token      *kts.Token
 }
 
 func (m *Mint) State() *State {
@@ -120,12 +120,18 @@ func (m *Mint) CheckTx(data []byte) error {
 			return err
 		}
 
-	case "ctt.deploy":
-		m.ContractDeploy(tx)
-	case "ctt.call":
-		m.ContractCall()
-	case "ctt.query":
-		m.ContractQuery()
+		//	设置矿工的地址
+	case "miner":
+
+		//	投票智能合约
+	case "vote":
+
+	case "db.mSet":
+	case "db.mSet":
+	case "db.mSet":
+	case "db.mSet":
+	case "db.mSet":
+
 	}
 
 	return nil
@@ -140,9 +146,6 @@ func (m *Mint) DeliverTx(data []byte) error {
 
 	switch tx.Event {
 	case "node.validator":
-	case "ctt.deploy":
-	case "ctt.call.*":
-	case "ctt.query.*":
 	}
 
 	return nil
