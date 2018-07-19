@@ -3,65 +3,138 @@ package web
 import (
 	"github.com/labstack/echo"
 	"net/http"
-	"github.com/kooksee/usmint/types"
+	"github.com/kooksee/usmint/server/core"
+	"math/big"
+	tp "github.com/tendermint/tendermint/types"
+	"encoding/hex"
 )
 
-func txPost(c echo.Context) error {
-	tx := types.NewTransaction()
+func index(c echo.Context) error {
 
-	if err := c.Bind(tx); err != nil {
-		c.Logger().Error(err.Error())
-		return c.JSON(http.StatusBadRequest, err.Error())
-	}
-
-	if err := c.Validate(tx); err != nil {
-		c.Logger().Error(err.Error())
-		return c.JSON(http.StatusBadRequest, err.Error())
-	}
-
-	switch tx.Event {
-	// 添加验证节点
-	case "":
-		//	调用交易合约函数
-	case "1":
-		//	调用查询合约函数
-	case "2":
-		//	得到block hash
-	case "3":
-		//	得到区块信息
-		//  q abci_info
-		//  q dump_consensus_state
-		//  q genesis
-		//  q net_info
-		//  q num_unconfirmed_txs
-		//  q status
-		//  q unconfirmed_txs
-
-		// ﻿abci_query?path=&data=&height=&prove=
-		// ﻿block?height=_
-		// ﻿block_results?height=
-		//  blockchain?minHeight=&maxHeight=_
-		// ﻿broadcast_tx_async?tx=_
-		// ﻿broadcast_tx_commit?tx=_
-		// ﻿commit?height=
-		//	tx?hash=&prove=_
-		// ﻿tx_search?query=&prove=
-		// ﻿validators?height=_
-
-	default:
-		// 方法不存在
-	}
-
-	return c.JSON(http.StatusOK, m{
-		"ok": "ok",
-		"oo": m{
-			"rid": c.Response().Header().Get(echo.HeaderXRequestID),
-		},
-		"d": tx,
-	})
+	c.String(
+		http.StatusOK,
+		`ok`,
+	)
+	return nil
 }
 
-func txGet(c echo.Context) error {
-	txId := c.Param("id")
-	return c.JSON(http.StatusOK, txId)
+func abciInfo(c echo.Context) error {
+
+	info, err := core.ABCIInfo()
+	if err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, info)
+}
+
+func dump_consensus_state(c echo.Context) error {
+
+	info, err := core.DumpConsensusState()
+	if err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, info)
+}
+
+func genesis(c echo.Context) error {
+
+	info, err := core.Genesis()
+	if err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, info)
+}
+
+func net_info(c echo.Context) error {
+
+	info, err := core.NetInfo()
+	if err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, info)
+}
+
+func num_unconfirmed_txs(c echo.Context) error {
+
+	info, err := core.NumUnconfirmedTxs()
+	if err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, info)
+}
+
+func status(c echo.Context) error {
+
+	info, err := core.Status()
+	if err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, info)
+}
+
+func unconfirmed_txs(c echo.Context) error {
+
+	info, err := core.UnconfirmedTxs()
+	if err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, info)
+}
+
+func block(c echo.Context) error {
+	a := big.NewInt(0)
+	a.SetString(c.QueryParam("height"), 10)
+	ret := a.Int64()
+	info, err := core.Block(&ret)
+	if err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, info)
+}
+
+func blockchain(c echo.Context) error {
+	minh := big.NewInt(0)
+	minh.SetString(c.QueryParam("height"), 10)
+	min := minh.Int64()
+
+	maxh := big.NewInt(0)
+	maxh.SetString(c.QueryParam("height"), 10)
+	max := maxh.Int64()
+
+	info, err := core.BlockchainInfo(min, max)
+	if err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, info)
+}
+
+func broadcast_tx_async(c echo.Context) error {
+
+	ret, _ := hex.DecodeString(c.QueryParam("tx"))
+	info, err := core.BroadcastTxAsync(tp.Tx(ret))
+	if err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, info)
+}
+
+func tx(c echo.Context) error {
+
+	ret, _ := hex.DecodeString(c.QueryParam("tx"))
+	info, err := core.Tx(ret, false)
+	if err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, info)
 }
