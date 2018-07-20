@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"github.com/kooksee/usmint/types"
 	pvm "github.com/tendermint/tendermint/types/priv_validator"
+	"github.com/tendermint/tmlibs/common"
 )
 
 func index(c echo.Context) error {
@@ -144,6 +145,16 @@ func tx(c echo.Context) error {
 
 	ret, _ := hex.DecodeString(c.Param("id"))
 	info, err := core.Tx(ret, false)
+	if err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	return c.JSON(http.StatusOK, info)
+}
+
+func query(c echo.Context) error {
+	ret, _ := hex.DecodeString(c.Param("tx"))
+	info, err := core.ABCIQuery("", common.HexBytes(ret), 0, false)
 	if err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}

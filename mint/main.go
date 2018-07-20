@@ -43,28 +43,6 @@ func (m *Mint) UpdateValidators(vals ... types.Validator) error {
 	return nil
 }
 
-// ContractDeploy 部署合约
-func (m *Mint) ContractDeploy(tx *kts.Transaction) (string, error) {
-	// 获取合约内容
-	// 存储合约内容
-	// 加载合约内容
-	// 获得合约ID
-	// 把合约ID返还给用户
-
-	//tx.Data
-
-	return "合约地址", nil
-}
-
-// ContractCall 调用合约
-func (m *Mint) ContractCall() error {
-	return nil
-}
-
-// ContractQuery 调用查询调用
-func (m *Mint) ContractQuery() ([]byte, error) {
-	return nil, nil
-}
 
 // InitChain 初始化chain
 func (m *Mint) InitChain(vals ... types.Validator) error {
@@ -106,8 +84,6 @@ func (m *Mint) CheckTx(data []byte) error {
 	//pubkey := tx.GetPubKey()
 
 	// 验证签名
-	// 检测合约是否在缓存当中,没有的就加载进来
-	// 加载lua类库
 	// 加载状态
 
 	switch tx.Event {
@@ -125,14 +101,13 @@ func (m *Mint) CheckTx(data []byte) error {
 
 		//	投票智能合约
 	case "vote":
+
+		// 纯粹的存储，没有任何的逻辑
 	case "store":
 
-		//case "db.mSet":
-		//case "db.mSet":
-		//case "db.mSet":
-		//	400739
-		//case "db.mSet":
-		//case "db.mSet":
+	case "tk.TransferTo":
+	case "tk.TransferFrom":
+	case "tk.Approve":
 
 	}
 
@@ -148,6 +123,25 @@ func (m *Mint) DeliverTx(data []byte) error {
 
 	switch tx.Event {
 	case "node.validator":
+
+	}
+
+	return nil
+}
+
+// 查询
+func (m *Mint) QueryTx(data []byte) error {
+	tx, err := kts.DecodeTx(data)
+	if err != nil {
+		return err
+	}
+
+	switch tx.Event {
+	case "node.validator":
+	case "tk.TotalSupply":
+	case "tk.Balances":
+	case "tk.BalanceOf":
+	case "tk.Allowance":
 	}
 
 	return nil

@@ -13,6 +13,8 @@ func initUrls(e *echo.Echo) {
 	e.GET("/unconfirmed_txs", unconfirmed_txs)
 	e.GET("/block/:height", block)
 	e.GET("/blockchain", blockchain)
-	e.GET("/broadcast_tx/:tx", broadcast_tx_async)
+	e.GET("/broadcast/:tx", broadcast_tx_async)
+	e.GET("/query/:tx", tx)
 	e.GET("/tx/:id", tx)
+
 }
