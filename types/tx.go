@@ -20,7 +20,7 @@ type Transaction struct {
 	Signature     string `json:"sign,omitempty"`
 	NodeSignature string `json:"node_sign,omitempty"`
 	Pubkey        string `json:"pubkey,omitempty"`
-	Data          string `json:"data,omitempty"`
+	Data          []byte `json:"data,omitempty"`
 	Event         string `json:"event,omitempty"`
 	Timestamp     uint64 `json:"time,omitempty"`
 	hash          []byte

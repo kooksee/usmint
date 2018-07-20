@@ -43,11 +43,7 @@ func (v *Validator) GetPubkey() (crypto.PubKey, error) {
 	return pk, nil
 }
 
-func (v *Validator) Has() bool {
-	pk, err := v.GetPubkey()
-	if err != nil {
-		return false
-	}
+func (v *Validator) Has(pk crypto.PubKey) bool {
 	b, err := v.db.Exist(pk.Address().Bytes())
 	cmn.ErrPipeLog("validator has error", err)
 	return b

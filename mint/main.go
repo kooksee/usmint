@@ -70,6 +70,7 @@ func (m *Mint) Commit() []byte {
 
 // CheckTx 预提交
 func (m *Mint) CheckTx(data []byte) types.ResponseCheckTx {
+	// 解析tx
 	tx, err := kts.DecodeTx(data)
 	if err != nil {
 		return types.ResponseCheckTx{
@@ -78,6 +79,7 @@ func (m *Mint) CheckTx(data []byte) types.ResponseCheckTx {
 		}
 	}
 
+	// 签名验证
 	if err := tx.VerifySign(); err != nil {
 		return types.ResponseCheckTx{
 			Code: code.ErrInternal.Code,
@@ -85,10 +87,15 @@ func (m *Mint) CheckTx(data []byte) types.ResponseCheckTx {
 		}
 	}
 
-	//pubkey := tx.GetPubKey()
-
-	// 验证签名
-	// 加载状态
+	// 验证节点权限
+	// 检查发送tx的节点有没有在区块链中,如果没有,那么该节点没有发送tx的权利
+	pk, _ := tx.GetPubKey()
+	if !m.val.Has(pk) {
+		return types.ResponseCheckTx{
+			Code: code.ErrInternal.Code,
+			Log:  cmn.Fmt("the node %s does not exist", tx.Pubkey),
+		}
+	}
 
 	switch tx.Event {
 	case "validator":
@@ -105,45 +112,39 @@ func (m *Mint) CheckTx(data []byte) types.ResponseCheckTx {
 		// 纯粹的存储，没有任何的逻辑
 	case "store":
 
-	case "tk.TransferTo":
-	case "tk.TransferFrom":
-	case "tk.Approve":
-
 	}
 
-	return nil
+	return types.ResponseCheckTx{
+		Code: code.Ok.Code,
+	}
 }
 
 // DeliverTx 提交
 func (m *Mint) DeliverTx(data []byte) types.ResponseDeliverTx {
-	tx, err := kts.DecodeTx(data)
-	if err != nil {
-		return err
-	}
+	tx, _ := kts.DecodeTx(data)
 
 	switch tx.Event {
-	case "node.validator":
+	case "validator":
+		val := &Validator{}
+		val.Decode(tx.Data)
+		if err := m.UpdateValidators(types.Validator{PubKey: val.PubKey, Power: val.Power}); err != nil {
+			return types.ResponseDeliverTx{
+				Code: code.ErrInternal.Code,
+				Log:  cmn.ErrPipeLog("DeliverTx Validator UpdateValidators Error", err).Error(),
+			}
+		}
 
+	case "store":
 	}
 
-	return nil
+	return types.ResponseDeliverTx{
+		Code: code.Ok.Code,
+	}
 }
 
 // 查询
 func (m *Mint) QueryTx(data []byte) types.ResponseQuery {
-	tx, err := kts.DecodeTx(data)
-	if err != nil {
-		return err
-	}
-
-	switch tx.Event {
-	case "tk.TotalSupply":
-	case "tk.Balances":
-	case "tk.BalanceOf":
-	case "tk.Allowance":
-	}
-
-	return nil
+	return types.ResponseQuery{}
 }
 
 // BeginBlock 开始区块
@@ -156,11 +157,4 @@ func (m *Mint) BeginBlock(data types.RequestBeginBlock) error {
 // EndBlock 结束区块
 func (m *Mint) EndBlock(data types.RequestEndBlock) ([]types.Validator, error) {
 	return m.valUpdates, nil
-}
-
-// UpdateValidator 更新验证节点,添加或者删除挖矿节点
-func (m *Mint) UpdateValidator(val *types.Validator) error {
-	// 其他节点的接入需要有主帐号控制
-	// 主帐号只控制节点的接入退出,但是并不能控制节点的币的操作
-	return m.val.UpdateValidator(val)
 }
