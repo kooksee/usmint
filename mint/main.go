@@ -55,13 +55,13 @@ func (m *Mint) InitChain(vals ... types.Validator) error {
 // Commit 提交tx
 func (m *Mint) Commit() []byte {
 	if m.state.Size <= 0 {
-		m.state.Size = 0
+		m.state.Size = 1
 	}
 
 	hash := make([]byte, 8)
 	binary.BigEndian.PutUint64(hash, uint64(m.state.Size))
 
-	m.state.Height++
+	m.state.Size++
 	m.state.AppHash = hash
 
 	m.state.Save()
@@ -151,6 +151,7 @@ func (m *Mint) QueryTx(data []byte) types.ResponseQuery {
 func (m *Mint) BeginBlock(data types.RequestBeginBlock) error {
 	// 初始化验证节点
 	m.valUpdates = make([]types.Validator, 0)
+	m.state.Height = data.Header.Height
 	return nil
 }
 
