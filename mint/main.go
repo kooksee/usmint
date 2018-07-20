@@ -4,9 +4,9 @@ import (
 	"github.com/tendermint/abci/types"
 	"github.com/kooksee/kdb"
 	kts "github.com/kooksee/usmint/types"
-	"encoding/binary"
 	"github.com/kooksee/usmint/cmn"
 	"github.com/kooksee/usmint/types/code"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 func New() *Mint {
@@ -23,7 +23,6 @@ type Mint struct {
 	state      *State
 	db         *kdb.KDB
 	val        *Validator
-	token      *kts.Token
 }
 
 func (m *Mint) State() *State {
@@ -54,18 +53,7 @@ func (m *Mint) InitChain(vals ... types.Validator) error {
 
 // Commit 提交tx
 func (m *Mint) Commit() []byte {
-	if m.state.Size <= 0 {
-		m.state.Size = 1
-	}
-
-	hash := make([]byte, 8)
-	binary.BigEndian.PutUint64(hash, uint64(m.state.Size))
-
-	m.state.Size++
-	m.state.AppHash = hash
-
-	m.state.Save()
-	return m.state.AppHash
+	return m.state.Save()
 }
 
 // CheckTx 预提交
@@ -137,6 +125,9 @@ func (m *Mint) DeliverTx(data []byte) types.ResponseDeliverTx {
 	case "store":
 	}
 
+	// 成功之后,计算一个新的app hash
+	// 根据之前的app hash计算,保证用户无法篡改数据
+	m.state.AppHash = crypto.Keccak256(m.state.AppHash, data)
 	return types.ResponseDeliverTx{
 		Code: code.Ok.Code,
 	}
@@ -150,8 +141,11 @@ func (m *Mint) QueryTx(data []byte) types.ResponseQuery {
 // BeginBlock 开始区块
 func (m *Mint) BeginBlock(data types.RequestBeginBlock) error {
 	// 初始化验证节点
+	
 	m.valUpdates = make([]types.Validator, 0)
 	m.state.Height = data.Header.Height
+	m.state.Block = data.Header.LastBlockID.Hash
+
 	return nil
 }
 

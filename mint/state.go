@@ -20,7 +20,7 @@ type State struct {
 	db   *kdb.KHash
 	name string
 
-	Size    int64  `json:"size"`
+	Block   []byte `json:"block"`
 	Height  int64  `json:"height"`
 	AppHash []byte `json:"app_hash"`
 }
@@ -30,7 +30,9 @@ func (s *State) Load() {
 	cmn.MustNotErr("state load error", err, json.Unmarshal(stateBytes, s))
 }
 
-func (s *State) Save() {
+// 保存状态值
+func (s *State) Save() []byte {
 	stateBytes, err := json.Marshal(s)
 	cmn.MustNotErr("state save error", err, s.db.Set([]byte(s.name), stateBytes))
+	return stateBytes
 }
