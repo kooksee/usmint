@@ -57,16 +57,18 @@ func (v *Validator) Check() error {
 	}
 
 	// 检查pubkey的格式是否合格
-	_, err := v.GetPubkey()
+	pk, err := v.GetPubkey()
 	if err != nil {
 		return err
 	}
+	v.pubkey = pk
+
 	return nil
 }
 
 // UpdateValidators 更新Validators
 func (v *Validator) UpdateValidator(val *types.Validator) error {
-	logger.Error("update node", "node", val.String())
+	logger.Debug("update node", "node", val.String())
 
 	pk, err := crypto.PubKeyFromBytes(val.GetPubKey())
 	if err = cmn.ErrPipeLog("pubkey parse error", err); err != nil {
