@@ -20,9 +20,10 @@ const (
 
 	TokenPrefix = "token:"
 
-	MetaPrefix  = "meta:"
-	StatePrefix = "state"
-	MinerPrefix = "miner"
+	MetaPrefix     = "meta:"
+	StatePrefix    = "state"
+	MinerPrefix    = "miner"
+	MetadataPrefix = "m:"
 
 	TokenAddress = "0x0000000000000000000000000"
 	TotalSupply  = "totalSupply"

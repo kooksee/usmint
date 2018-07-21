@@ -34,3 +34,7 @@ func (m Miner) Set(v []byte, mn []byte) error {
 func (m Miner) Delete(v []byte) error {
 	return m.db.Del(v)
 }
+
+// 记录矿工的交易地址
+// 记录矿工的交易数量
+// 计算矿工受益
