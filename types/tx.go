@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"errors"
-	"crypto/ecdsa"
 	"github.com/tendermint/go-crypto"
 )
 
@@ -24,7 +23,7 @@ type Transaction struct {
 	Event     string `json:"event"`
 	Timestamp uint64 `json:"time"`
 	hash      []byte
-	pubkey    *ecdsa.PublicKey
+	pubkey    crypto.PubKey
 }
 
 func (t *Transaction) Dumps() ([]byte, error) {
@@ -81,7 +80,7 @@ func (t *Transaction) Sign(priv crypto.PrivKey) ([]byte, error) {
 	return priv.Sign(msg).Bytes(), nil
 }
 
-func (t *Transaction) GetPubKey() *ecdsa.PublicKey {
+func (t *Transaction) GetPubKey() crypto.PubKey {
 	return t.pubkey
 }
 

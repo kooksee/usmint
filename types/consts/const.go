@@ -23,6 +23,9 @@ const (
 	MetaPrefix  = "meta:"
 	StatePrefix = "state"
 	MinerPrefix = "miner"
+
+	TokenAddress = "0x0000000000000000000000000"
+	TotalSupply  = "totalSupply"
 )
 
 func Meta(ms ... string) string {
