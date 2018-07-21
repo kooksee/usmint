@@ -98,7 +98,14 @@ func (m *Mint) CheckTx(data []byte) types.ResponseCheckTx {
 		}
 
 		// 纯粹的存储，没有任何的逻辑
+		// 从node层去操作获取所有的数据
 	case "store":
+
+	default:
+		return types.ResponseCheckTx{
+			Code: code.ErrInternal.Code,
+			Log:  "tx event is nonexistent",
+		}
 
 	}
 
@@ -141,7 +148,7 @@ func (m *Mint) QueryTx(data []byte) types.ResponseQuery {
 // BeginBlock 开始区块
 func (m *Mint) BeginBlock(data types.RequestBeginBlock) error {
 	// 初始化验证节点
-	
+
 	m.valUpdates = make([]types.Validator, 0)
 	m.state.Height = data.Header.Height
 	m.state.Block = data.Header.LastBlockID.Hash
