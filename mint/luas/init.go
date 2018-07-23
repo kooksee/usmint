@@ -16,5 +16,6 @@ var db *kdb.KDB
 
 func Init() {
 	cfg = config.DefaultCfg()
+	db = cfg.App.Db()
 	logger = config.Log().With("module", "luas")
 }

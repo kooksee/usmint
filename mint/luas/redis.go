@@ -21,6 +21,6 @@ type RedisDb struct {
 	l       *lua.LState
 }
 
-func (db *RedisDb) Set() {
+func (db *RedisDb) MHSet(key string, name string, value lua.LValue) {
 	db.r.Ping().String()
 }

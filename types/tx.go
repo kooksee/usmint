@@ -17,13 +17,14 @@ func NewTransaction() *Transaction {
 }
 
 type Transaction struct {
-	Signature string `json:"sign"`
-	Pubkey    string `json:"pubkey"`
-	Data      string `json:"data"`
-	Event     string `json:"event"`
-	Timestamp uint64 `json:"time"`
-	hash      []byte
-	pubkey    crypto.PubKey
+	Signature     string `json:"sign,omitempty"`
+	NodeSignature string `json:"node_sign,omitempty"`
+	Pubkey        string `json:"pubkey,omitempty"`
+	Data          []byte `json:"data,omitempty"`
+	Event         string `json:"event,omitempty"`
+	Timestamp     uint64 `json:"time,omitempty"`
+	hash          []byte
+	pubkey        crypto.PubKey
 }
 
 func (t *Transaction) Dumps() ([]byte, error) {
@@ -80,8 +81,23 @@ func (t *Transaction) Sign(priv crypto.PrivKey) ([]byte, error) {
 	return priv.Sign(msg).Bytes(), nil
 }
 
-func (t *Transaction) GetPubKey() crypto.PubKey {
-	return t.pubkey
+func (t *Transaction) GetPubKey() (crypto.PubKey, error) {
+	if t.pubkey != nil {
+		return t.pubkey, nil
+	}
+
+	pubkey, err := hex.DecodeString(t.Pubkey)
+	if err != nil {
+		return nil, err
+	}
+
+	pk, err := crypto.PubKeyFromBytes(pubkey)
+	if err != nil {
+		return nil, err
+	}
+
+	t.pubkey = pk
+	return pk, nil
 }
 
 // VerifySign 签名验证
@@ -109,6 +125,8 @@ func (t *Transaction) VerifySign() error {
 	if !pk.VerifyBytes(t.signMsg(), s) {
 		return errors.New("transaction verify false")
 	}
+
+	t.pubkey = pk
 
 	return nil
 }

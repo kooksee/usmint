@@ -12,15 +12,14 @@ main = {
     w = 9
 }
 
-function main.hello(name, value)
+function hello(name, value)
     local t = Table("h")
     print(name, value, t)
     r.set("key", "value")
     r.hmset("key", { a = 1, b = 2 })
+    print(main.w)
 end
 
-function main.test(name, value)
+function test(name, value)
     print(name, value)
 end
-
-return main

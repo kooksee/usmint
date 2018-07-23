@@ -17,7 +17,7 @@ type KApp struct {
 }
 
 func New() *KApp {
-	// 要先初始化才能进行下一步操作
+	// 初始化mint模块
 	mint.Init()
 	return &KApp{m: mint.New()}
 }

@@ -6,6 +6,10 @@ import (
 	"github.com/kooksee/usmint/cmn"
 )
 
+// db:map
+// db:set
+// db:list
+
 func NewDb(contractAddress []byte) *ContractDb {
 	return &ContractDb{db: db.KHash(contractAddress)}
 }
@@ -53,12 +57,14 @@ func (c *CDb) Int(key string) int {
 	return int(cmn.ByteToInt64(val))
 }
 
+// 该类型取消
 func (c *CDb) SetFloat(key string, value float64) {
 	cmn.ErrPipeLog("CDb SetFloat Error", c.db.WithTx(func(kh *kdb.KHBatch) error {
 		return kh.Set([]byte(key), cmn.Float64ToByte(value))
 	}))
 }
 
+// 该类型取消
 func (c *CDb) Float(key string) float64 {
 	val, err := c.db.Get([]byte(key))
 	if err := cmn.ErrPipeLog("CDb Float Error", err); err != nil {

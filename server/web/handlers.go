@@ -140,8 +140,17 @@ func broadcast_tx_async(c echo.Context) error {
 	return c.JSON(http.StatusOK, info)
 }
 
-func tx(c echo.Context) error {
+func qearch_tx(c echo.Context) error {
+	ret, _ := hex.DecodeString(c.Param("tx"))
+	info, err := core.ABCIQuery("", ret, -1, false)
+	if err != nil {
+		return c.String(http.StatusBadRequest, err.Error())
+	}
 
+	return c.JSON(http.StatusOK, info)
+}
+
+func tx(c echo.Context) error {
 	ret, _ := hex.DecodeString(c.Param("id"))
 	info, err := core.Tx(ret, false)
 	if err != nil {
