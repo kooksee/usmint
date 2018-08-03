@@ -28,12 +28,12 @@ type State struct {
 
 func (s *State) Load() {
 	stateBytes, err := s.db.Get([]byte(s.name))
-	cmn.MustNotErr(cmn.ErrPipe("state load error", err, cmn.Wrap(json.Unmarshal, stateBytes, s)))
+	cmn.MustNotErr("state load error", err, cmn.ErrCurry(json.Unmarshal, stateBytes, s))
 }
 
 // 保存状态值
 func (s *State) Save() []byte {
 	stateBytes, err := json.Marshal(s)
-	cmn.MustNotErr(cmn.ErrPipe("state save error", err, s.db.Set([]byte(s.name), stateBytes)))
+	cmn.MustNotErr("state save error", err, cmn.ErrCurry(s.db.Set, []byte(s.name), stateBytes))
 	return stateBytes
 }

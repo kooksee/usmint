@@ -22,7 +22,7 @@ func New() *Mint {
 type Mint struct {
 	valUpdates []types.Validator
 	state      *State
-	db         *kdb.IKDB
+	db         kdb.IKDB
 	val        *Validator
 	miner      *Miner
 }
@@ -88,7 +88,7 @@ func (m *Mint) CheckTx(data []byte) types.ResponseCheckTx {
 	if err != nil {
 		return types.ResponseCheckTx{
 			Code: code.ErrInternal.Code,
-			Log:  cmn.ErrPipeLog("Mint CheckTx DecodeTx Error", err).Error(),
+			Log:  cmn.ErrPipe("Mint CheckTx DecodeTx Error", err).Error(),
 		}
 	}
 
@@ -96,7 +96,7 @@ func (m *Mint) CheckTx(data []byte) types.ResponseCheckTx {
 	if err := tx.VerifySign(); err != nil {
 		return types.ResponseCheckTx{
 			Code: code.ErrInternal.Code,
-			Log:  cmn.ErrPipeLog("Mint CheckTx VerifySign Error", err).Error(),
+			Log:  cmn.ErrPipe("Mint CheckTx VerifySign Error", err).Error(),
 		}
 	}
 
@@ -105,17 +105,17 @@ func (m *Mint) CheckTx(data []byte) types.ResponseCheckTx {
 	if !m.val.Has(tx.GetPubKey()) {
 		return types.ResponseCheckTx{
 			Code: code.ErrInternal.Code,
-			Log:  cmn.Fmt("the node %s does not exist", tx.Pubkey),
+			Log:  cmn.F("the node %s does not exist", tx.Pubkey),
 		}
 	}
 
 	switch tx.Event {
 	case "validator":
-		if err := cmn.ErrPipeLog(
+		if err := cmn.ErrPipe(
 			"CheckTx validator error",
-			m.val.Check(),
-			m.val.Decode(data),
-			m.UpdateValidators(types.Validator{PubKey: m.val.PubKey, Power: m.val.Power})); err != nil {
+			cmn.ErrCurry(m.val.Check),
+			cmn.ErrCurry(m.val.Decode, data),
+			cmn.ErrCurry(m.UpdateValidators, types.Validator{PubKey: m.val.PubKey, Power: m.val.Power})); err != nil {
 			return err
 		}
 

@@ -1,15 +1,17 @@
 package mint
 
 import (
-	"github.com/tendermint/go-crypto"
 	"errors"
-	"github.com/kooksee/usmint/types/consts"
+	"github.com/kooksee/usmint/kts/consts"
 	"github.com/kooksee/kdb"
-	"github.com/tendermint/abci/types"
 	"github.com/kooksee/usmint/cmn"
+	"encoding/json"
+	"github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/encoding/amino"
 )
 
-func NewValidator(dbs ... *kdb.IKDB) *Validator {
+func NewValidator(dbs ... kdb.IKDB) *Validator {
 	db1 := db
 	if len(dbs) > 0 {
 		db1 = dbs[0]
@@ -21,7 +23,7 @@ func NewValidator(dbs ... *kdb.IKDB) *Validator {
 
 // Validator
 type Validator struct {
-	db     *kdb.IKHash
+	db     kdb.IKHash
 	name   string
 	pubkey crypto.PubKey
 
@@ -34,7 +36,7 @@ func (v *Validator) GetPubkey() (crypto.PubKey, error) {
 		return v.pubkey, nil
 	}
 
-	pk, err := crypto.PubKeyFromBytes(v.PubKey)
+	pk, err := cryptoAmino.PubKeyFromBytes(v.PubKey)
 	if err != nil {
 		return nil, cmn.ErrPipe("validator parse pubkey", err)
 	}
@@ -45,7 +47,7 @@ func (v *Validator) GetPubkey() (crypto.PubKey, error) {
 
 func (v *Validator) Has(pk crypto.PubKey) bool {
 	b, err := v.db.Exist(pk.Address().Bytes())
-	cmn.ErrPipeLog("validator has error", err)
+	cmn.ErrPipe("validator has error", err)
 	return b
 }
 
@@ -68,8 +70,8 @@ func (v *Validator) Check() error {
 func (v *Validator) UpdateValidator(val *types.Validator) error {
 	logger.Error("update node", "node", val.String())
 
-	pk, err := crypto.PubKeyFromBytes(val.GetPubKey())
-	if err = cmn.ErrPipeLog("pubkey parse error", err); err != nil {
+	pk, err := cryptoAmino.PubKeyFromBytes(val.GetPubKey())
+	if err = cmn.ErrPipe("pubkey parse error", err); err != nil {
 		return err
 	}
 
@@ -77,29 +79,26 @@ func (v *Validator) UpdateValidator(val *types.Validator) error {
 	if val.Power == -1 {
 		val.Power = 0
 		val1, err := json.Marshal(val)
-		return cmn.ErrPipeLog("save node error", err, v.db.Set(pk.Address().Bytes(), val1))
+		return cmn.ErrPipe("save node error", err, cmn.ErrCurry(v.db.Set, pk.Address().Bytes(), val1))
 	}
 
 	// power等于-2的时候,删除节点
 	if val.Power == -2 {
 		val.Power = 0
-		return cmn.ErrPipeLog("delete node error", v.db.Del(pk.Address().Bytes()))
+		return cmn.ErrPipe("delete node error", cmn.ErrCurry(v.db.Del, pk.Address().Bytes()))
 	}
 
 	val1, err := json.Marshal(val)
-	return cmn.ErrPipeLog("save node error", err, v.db.Set(pk.Address().Bytes(), val1))
+	return cmn.ErrPipe("save node error", err, cmn.ErrCurry(v.db.Set, pk.Address().Bytes(), val1))
 }
 
 func (v *Validator) Decode(val []byte) error {
-	return cmn.ErrPipeLog("validator decode error", json.Unmarshal(val, v))
+	return cmn.ErrPipe("validator decode error", cmn.ErrCurry(json.Unmarshal, val, v))
 }
 
 func (v *Validator) Delete() error {
 	pk, err := v.GetPubkey()
-	if err != nil {
-		return err
-	}
-	return v.db.Del(pk.Address().Bytes())
+	return cmn.ErrPipe("Validator.Delete error", err, cmn.ErrCurry(v.db.Del, pk.Address().Bytes()))
 }
 
 func (v *Validator) Save() error {
@@ -108,10 +107,6 @@ func (v *Validator) Save() error {
 		return err
 	}
 
-	val, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	return v.db.Set(pk.Address().Bytes(), val)
+	val, err := cmn.JsonMarshal(v)
+	return cmn.ErrPipe("Validator.Save Error", err, cmn.ErrCurry(v.db.Set, pk.Address().Bytes(), val))
 }

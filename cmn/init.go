@@ -7,10 +7,12 @@ import (
 )
 
 var ErrPipe = cmn.Err.ErrWithMsg
+var ErrCurry = cmn.Err.Curry
+var F = cmn.F
+
 var MustNotErr = cmn.Err.MustNotErr
 var JsonMarshal = cmn.Json.Marshal
 var JsonUnmarshal = cmn.Json.Unmarshal
-var Wrap=cmn.Err.Wrap
 
 type M map[string]interface{}
 
