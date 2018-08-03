@@ -4,10 +4,7 @@ import "strings"
 
 const (
 	// events
-	DbSet        = "DbSet"
-	DbGet        = "DbGet"
 	ValidatorSet = "ValidatorSet"
-	AccountSet   = "AccountSet"
 
 	// db
 	Metadata = "metadata"

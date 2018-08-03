@@ -4,12 +4,14 @@ import (
 	"encoding/hex"
 	"fmt"
 	"errors"
-	"github.com/tendermint/go-crypto"
+	"github.com/tendermint/tendermint/crypto"
+	"encoding/json"
+	"github.com/kooksee/usmint/cmn"
 )
 
 func DecodeTx(bs []byte) (*Transaction, error) {
 	tx := NewTransaction()
-	return tx, json.Unmarshal(bs, tx)
+	return tx, cmn.JsonUnmarshal(bs, tx)
 }
 
 func NewTransaction() *Transaction {

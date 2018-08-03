@@ -9,7 +9,7 @@ import (
 	"github.com/kooksee/usmint/cmn"
 )
 
-func NewValidator(dbs ... *kdb.KDB) *Validator {
+func NewValidator(dbs ... *kdb.IKDB) *Validator {
 	db1 := db
 	if len(dbs) > 0 {
 		db1 = dbs[0]
@@ -21,7 +21,7 @@ func NewValidator(dbs ... *kdb.KDB) *Validator {
 
 // Validator
 type Validator struct {
-	db     *kdb.KHash
+	db     *kdb.IKHash
 	name   string
 	pubkey crypto.PubKey
 
@@ -36,7 +36,7 @@ func (v *Validator) GetPubkey() (crypto.PubKey, error) {
 
 	pk, err := crypto.PubKeyFromBytes(v.PubKey)
 	if err != nil {
-		return nil, cmn.ErrPipeLog("validator parse pubkey", err)
+		return nil, cmn.ErrPipe("validator parse pubkey", err)
 	}
 
 	v.pubkey = pk

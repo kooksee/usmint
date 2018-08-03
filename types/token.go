@@ -5,8 +5,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/kooksee/kdb"
 	"github.com/kooksee/usmint/types/consts"
+	"github.com/kooksee/usmint/cmn"
 	"errors"
-	"ethtools/cmn"
 )
 
 func NewToken(address common.Address, db kdb.IKDB) *Token {
@@ -32,7 +32,7 @@ func (t *Token) InitToken(amount *big.Int) error {
 	}
 
 	if !b {
-		return cmn.ErrPipeLog(
+		return cmn.ErrPipe(
 			"Token InitToken Error",
 			t.db.Set([]byte(consts.TotalSupply), amount.Bytes()),
 			t.db.Set([]byte(consts.TokenAddress), amount.Bytes()),
@@ -64,7 +64,7 @@ func (t *Token) TransferTo(toAddress common.Address, value *big.Int) error {
 	fa = fa.And(fa, value)
 	ta = ta.Sub(ta, value)
 
-	return cmn.ErrPipeLog(
+	return cmn.ErrPipe(
 		"TransferTo Error",
 		t.db.Set(t.address.Bytes(), fa.Bytes()),
 		t.db.Set(toAddress.Bytes(), ta.Bytes()),
@@ -101,7 +101,7 @@ func (t *Token) TransferFrom(fromAddress common.Address, toAddress common.Addres
 	aa = aa.Sub(aa, value)
 	ta = ta.Add(ta, value)
 
-	return cmn.ErrPipeLog(
+	return cmn.ErrPipe(
 		"Token TransferFrom Error",
 		t.db.Set(approveAddr, aa.Bytes()),
 		t.db.Set(toAddr, ta.Bytes()),
@@ -154,7 +154,7 @@ func (t *Token) Approve(spenderAddress common.Address, value *big.Int) error {
 
 	ta = ta.And(ta, value)
 
-	return cmn.ErrPipeLog(
+	return cmn.ErrPipe(
 		"Token Approve Error",
 		t.db.Set(toAddr, ta.Bytes()),
 	)
@@ -164,7 +164,7 @@ func (t *Token) Allowance(ownerAddress common.Address, spenderAddress common.Add
 	addr := append(ownerAddress.Bytes(), spenderAddress.Bytes()...)
 	ad, err := t.db.Get(addr)
 	if err != nil {
-		cmn.ErrPipeLog("Token Allowance Error", err)
+		cmn.ErrPipe("Token Allowance Error", err)
 		return big.NewInt(0)
 	}
 	return big.NewInt(0).SetBytes(ad)

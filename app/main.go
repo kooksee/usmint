@@ -6,8 +6,8 @@ package app
 
 import (
 	"github.com/kooksee/usmint/mint"
+	"github.com/kooksee/usmint/cmn"
 	"github.com/tendermint/tendermint/abci/types"
-	"ethtools/cmn"
 )
 
 type KApp struct {
@@ -58,17 +58,17 @@ func (app *KApp) Query(reqQuery types.RequestQuery) (res types.ResponseQuery) {
 
 // Save the validators in the merkle tree
 func (app *KApp) InitChain(req types.RequestInitChain) types.ResponseInitChain {
-	cmn.MustNotErr("app InitChain error", app.m.InitChain(req.Validators...))
+	cmn.MustNotErr(cmn.ErrPipe("app InitChain error", app.m.InitChain(req.Validators...)))
 	return types.ResponseInitChain{}
 }
 
 func (app *KApp) BeginBlock(req types.RequestBeginBlock) types.ResponseBeginBlock {
-	cmn.ErrPipeLog("app BeginBlock error", app.m.BeginBlock(req))
+	cmn.ErrPipe("app BeginBlock error", app.m.BeginBlock(req))
 	return types.ResponseBeginBlock{}
 }
 
 func (app *KApp) EndBlock(req types.RequestEndBlock) types.ResponseEndBlock {
 	val, err := app.m.EndBlock(nil)
-	cmn.ErrPipeLog("app EndBlock error", err)
+	cmn.ErrPipe("app EndBlock error", err)
 	return types.ResponseEndBlock{ValidatorUpdates: val}
 }
