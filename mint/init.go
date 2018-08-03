@@ -1,20 +1,16 @@
 package mint
 
 import (
-	"github.com/json-iterator/go"
-	"github.com/tendermint/tmlibs/log"
+	"github.com/tendermint/tendermint/libs/log"
 	"github.com/kooksee/kdb"
-	"ybkchain/config"
 )
 
 var (
-	json   = jsoniter.ConfigCompatibleWithStandardLibrary
+	db     *kdb.IKDB
 	logger log.Logger
-	db     *kdb.KDB
-	cttm   *ContractManager
 )
 
-func Init() {
-	db = cfg.App.Db()
-	logger = config.Log().With("module", "mint")
+func Init(logger log.Logger) {
+	kdb.DefaultConfig()
+	logger = logger.With("pkg", "mint")
 }

@@ -16,7 +16,7 @@ import (
 func DefaultNewNode(config *config.Config, logger log.Logger) (*node.Node, error) {
 	return node.NewNode(config,
 		privval.LoadOrGenFilePV(config.PrivValidatorFile()),
-		proxy.NewLocalClientCreator(app.New()),
+		proxy.NewLocalClientCreator(app.New(logger)),
 		node.DefaultGenesisDocProviderFunc(config),
 		node.DefaultDBProvider,
 		node.DefaultMetricsProvider,

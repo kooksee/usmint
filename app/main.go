@@ -8,6 +8,7 @@ import (
 	"github.com/kooksee/usmint/mint"
 	"github.com/kooksee/usmint/cmn"
 	"github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/libs/log"
 )
 
 type KApp struct {
@@ -15,9 +16,9 @@ type KApp struct {
 	m *mint.Mint
 }
 
-func New() *KApp {
+func New(logger log.Logger) *KApp {
 	// 初始化mint模块
-	mint.Init()
+	mint.Init(logger)
 	return &KApp{m: mint.New()}
 }
 
