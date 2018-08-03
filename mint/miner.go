@@ -2,12 +2,12 @@ package mint
 
 import (
 	"github.com/kooksee/kdb"
-	"github.com/kooksee/usmint/types/consts"
+	"github.com/kooksee/usmint/kts/consts"
 )
 
 // 矿工设置
 
-func NewMiner(dbs ... *kdb.KDB) *Miner {
+func NewMiner(dbs ... kdb.IKDB) *Miner {
 	db1 := db
 	if len(dbs) > 0 {
 		db1 = dbs[0]
@@ -18,7 +18,7 @@ func NewMiner(dbs ... *kdb.KDB) *Miner {
 }
 
 type Miner struct {
-	db   *kdb.KHash
+	db   kdb.IKHash
 	name string
 }
 

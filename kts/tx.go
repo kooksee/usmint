@@ -7,6 +7,7 @@ import (
 	"github.com/tendermint/tendermint/crypto"
 	"encoding/json"
 	"github.com/kooksee/usmint/cmn"
+	"github.com/tendermint/tendermint/crypto/encoding/amino"
 )
 
 func DecodeTx(bs []byte) (*Transaction, error) {
@@ -73,16 +74,6 @@ func (t *Transaction) signMsg() []byte {
 	return crypto.Ripemd160([]byte(fmt.Sprintf("%s%s%d", t.Data, t.Event, t.Timestamp)))
 }
 
-// Sign 签名
-func (t *Transaction) Sign(priv crypto.PrivKey) ([]byte, error) {
-	msg := t.signMsg()
-	if msg == nil {
-		return nil, errors.New("签名数据为空")
-	}
-
-	return priv.Sign(msg).Bytes(), nil
-}
-
 func (t *Transaction) GetPubKey() (crypto.PubKey, error) {
 	if t.pubkey != nil {
 		return t.pubkey, nil
@@ -93,7 +84,7 @@ func (t *Transaction) GetPubKey() (crypto.PubKey, error) {
 		return nil, err
 	}
 
-	pk, err := crypto.PubKeyFromBytes(pubkey)
+	pk, err := cryptoAmino.PubKeyFromBytes(pubkey)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +100,7 @@ func (t *Transaction) VerifySign() error {
 		return err
 	}
 
-	s, err := crypto.SignatureFromBytes(sign)
+	s, err := cryptoAmino.SignatureFromBytes(sign)
 	if err != nil {
 		return err
 	}
@@ -119,7 +110,7 @@ func (t *Transaction) VerifySign() error {
 		return err
 	}
 
-	pk, err := crypto.PubKeyFromBytes(pubkey)
+	pk, err := cryptoAmino.PubKeyFromBytes(pubkey)
 	if err != nil {
 		return err
 	}

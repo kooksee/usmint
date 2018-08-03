@@ -3,10 +3,11 @@ package mint
 import (
 	"github.com/kooksee/kdb"
 	"github.com/kooksee/usmint/cmn"
-	"github.com/kooksee/usmint/types/consts"
+	"github.com/kooksee/usmint/kts/consts"
+	"encoding/json"
 )
 
-func NewState(dbs ... *kdb.KDB) *State {
+func NewState(dbs ... kdb.IKDB) *State {
 	db1 := db
 	if len(dbs) > 0 {
 		db1 = dbs[0]
@@ -17,7 +18,7 @@ func NewState(dbs ... *kdb.KDB) *State {
 }
 
 type State struct {
-	db   *kdb.KHash
+	db   kdb.IKHash
 	name string
 
 	Block   []byte `json:"block"`
@@ -27,12 +28,12 @@ type State struct {
 
 func (s *State) Load() {
 	stateBytes, err := s.db.Get([]byte(s.name))
-	cmn.MustNotErr("state load error", err, json.Unmarshal(stateBytes, s))
+	cmn.MustNotErr(cmn.ErrPipe("state load error", err, cmn.Wrap(json.Unmarshal, stateBytes, s)))
 }
 
 // 保存状态值
 func (s *State) Save() []byte {
 	stateBytes, err := json.Marshal(s)
-	cmn.MustNotErr("state save error", err, s.db.Set([]byte(s.name), stateBytes))
+	cmn.MustNotErr(cmn.ErrPipe("state save error", err, s.db.Set([]byte(s.name), stateBytes)))
 	return stateBytes
 }

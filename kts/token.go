@@ -4,7 +4,7 @@ import (
 	"math/big"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/kooksee/kdb"
-	"github.com/kooksee/usmint/types/consts"
+	"github.com/kooksee/usmint/kts/consts"
 	"github.com/kooksee/usmint/cmn"
 	"errors"
 )
