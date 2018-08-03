@@ -12,6 +12,7 @@ import (
 	"github.com/tendermint/tendermint/proxy"
 	"github.com/kooksee/usmint/app"
 	"github.com/kooksee/usmint/cmn"
+	"github.com/kooksee/usmint/cmd"
 )
 
 func DefaultNewNode(config *config.Config, logger log.Logger) (*node.Node, error) {
@@ -46,7 +47,7 @@ func main() {
 		commands.TestnetFilesCmd,
 		commands.ShowNodeIDCmd,
 		commands.GenNodeKeyCmd,
-		commands.VersionCmd,
+		cmds.VersionCmd,
 	)
 
 	// DefaultNewNode function

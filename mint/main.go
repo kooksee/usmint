@@ -2,10 +2,10 @@ package mint
 
 import (
 	"github.com/kooksee/kdb"
-	kts "github.com/kooksee/usmint/types"
+	"github.com/kooksee/usmint/kts"
+	"github.com/kooksee/usmint/kts/code"
 	"github.com/kooksee/usmint/cmn"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/kooksee/usmint/types/code"
 	"github.com/tendermint/tendermint/abci/types"
 )
 
@@ -22,9 +22,8 @@ func New() *Mint {
 type Mint struct {
 	valUpdates []types.Validator
 	state      *State
-	db         *kdb.KDB
+	db         *kdb.IKDB
 	val        *Validator
-	ctt        *Contract
 	miner      *Miner
 }
 
