@@ -11,12 +11,19 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	"github.com/tendermint/tendermint/proxy"
 	"github.com/kooksee/usmint/app"
+	"github.com/kooksee/usmint/cmn"
 )
 
 func DefaultNewNode(config *config.Config, logger log.Logger) (*node.Node, error) {
+	// init cmn
+	cmn.InitLog(logger)
+
+	// init config
+	cmn.InitCfg(config)
+
 	return node.NewNode(config,
 		privval.LoadOrGenFilePV(config.PrivValidatorFile()),
-		proxy.NewLocalClientCreator(app.New(logger)),
+		proxy.NewLocalClientCreator(app.New()),
 		node.DefaultGenesisDocProviderFunc(config),
 		node.DefaultDBProvider,
 		node.DefaultMetricsProvider,

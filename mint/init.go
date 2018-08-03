@@ -3,6 +3,8 @@ package mint
 import (
 	"github.com/tendermint/tendermint/libs/log"
 	"github.com/kooksee/kdb"
+	"github.com/kooksee/usmint/cmn"
+	"path/filepath"
 )
 
 var (
@@ -10,7 +12,8 @@ var (
 	logger log.Logger
 )
 
-func Init(logger log.Logger) {
-	kdb.DefaultConfig()
-	logger = logger.With("pkg", "mint")
+func Init() {
+	cfg := kdb.DefaultConfig()
+	cfg.InitKdb(filepath.Join(cmn.GetCfg().DBDir(), "app_db"))
+	logger = cmn.Log().With("pkg", "mint")
 }
