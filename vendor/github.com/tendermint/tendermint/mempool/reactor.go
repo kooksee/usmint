@@ -5,10 +5,10 @@ import (
 	"reflect"
 	"time"
 
-	abci "github.com/tendermint/abci/types"
-	"github.com/tendermint/go-amino"
-	"github.com/tendermint/tmlibs/clist"
-	"github.com/tendermint/tmlibs/log"
+	amino "github.com/tendermint/go-amino"
+	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/libs/clist"
+	"github.com/tendermint/tendermint/libs/log"
 
 	cfg "github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/p2p"
@@ -45,6 +45,14 @@ func (memR *MempoolReactor) SetLogger(l log.Logger) {
 	memR.Mempool.SetLogger(l)
 }
 
+// OnStart implements p2p.BaseReactor.
+func (memR *MempoolReactor) OnStart() error {
+	if !memR.config.Broadcast {
+		memR.Logger.Info("Tx broadcasting is disabled")
+	}
+	return nil
+}
+
 // GetChannels implements Reactor.
 // It returns the list of channels for this reactor.
 func (memR *MempoolReactor) GetChannels() []*p2p.ChannelDescriptor {
@@ -70,7 +78,7 @@ func (memR *MempoolReactor) RemovePeer(peer p2p.Peer, reason interface{}) {
 // Receive implements Reactor.
 // It adds any received transactions to the mempool.
 func (memR *MempoolReactor) Receive(chID byte, src p2p.Peer, msgBytes []byte) {
-	msg, err := DecodeMessage(msgBytes)
+	msg, err := decodeMsg(msgBytes)
 	if err != nil {
 		memR.Logger.Error("Error decoding message", "src", src, "chId", chID, "msg", msg, "err", err, "bytes", msgBytes)
 		memR.Switch.StopPeerForError(src, err)
@@ -82,7 +90,7 @@ func (memR *MempoolReactor) Receive(chID byte, src p2p.Peer, msgBytes []byte) {
 	case *TxMessage:
 		err := memR.Mempool.CheckTx(msg.Tx, nil)
 		if err != nil {
-			memR.Logger.Info("Could not check tx", "tx", msg.Tx, "err", err)
+			memR.Logger.Info("Could not check tx", "tx", TxID(msg.Tx), "err", err)
 		}
 		// broadcasting happens from go routines per peer
 	default:
@@ -129,7 +137,8 @@ func (memR *MempoolReactor) broadcastTxRoutine(peer p2p.Peer) {
 		height := memTx.Height()
 		if peerState_i := peer.Get(types.PeerStateKey); peerState_i != nil {
 			peerState := peerState_i.(PeerState)
-			if peerState.GetHeight() < height-1 { // Allow for a lag of 1 block
+			peerHeight := peerState.GetHeight()
+			if peerHeight < height-1 { // Allow for a lag of 1 block
 				time.Sleep(peerCatchupSleepIntervalMS * time.Millisecond)
 				continue
 			}
@@ -165,11 +174,9 @@ func RegisterMempoolMessages(cdc *amino.Codec) {
 	cdc.RegisterConcrete(&TxMessage{}, "tendermint/mempool/TxMessage", nil)
 }
 
-// DecodeMessage decodes a byte-array into a MempoolMessage.
-func DecodeMessage(bz []byte) (msg MempoolMessage, err error) {
+func decodeMsg(bz []byte) (msg MempoolMessage, err error) {
 	if len(bz) > maxMsgSize {
-		return msg, fmt.Errorf("Msg exceeds max size (%d > %d)",
-			len(bz), maxMsgSize)
+		return msg, fmt.Errorf("Msg exceeds max size (%d > %d)", len(bz), maxMsgSize)
 	}
 	err = cdc.UnmarshalBinaryBare(bz, &msg)
 	return

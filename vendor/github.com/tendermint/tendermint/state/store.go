@@ -3,10 +3,10 @@ package state
 import (
 	"fmt"
 
-	abci "github.com/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
+	cmn "github.com/tendermint/tendermint/libs/common"
+	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/types"
-	cmn "github.com/tendermint/tmlibs/common"
-	dbm "github.com/tendermint/tmlibs/db"
 )
 
 //------------------------------------------------------------------------
@@ -80,15 +80,15 @@ func loadState(db dbm.DB, key []byte) (state State) {
 }
 
 // SaveState persists the State, the ValidatorsInfo, and the ConsensusParamsInfo to the database.
-func SaveState(db dbm.DB, s State) {
-	saveState(db, s, stateKey)
+func SaveState(db dbm.DB, state State) {
+	saveState(db, state, stateKey)
 }
 
-func saveState(db dbm.DB, s State, key []byte) {
-	nextHeight := s.LastBlockHeight + 1
-	saveValidatorsInfo(db, nextHeight, s.LastHeightValidatorsChanged, s.Validators)
-	saveConsensusParamsInfo(db, nextHeight, s.LastHeightConsensusParamsChanged, s.ConsensusParams)
-	db.SetSync(stateKey, s.Bytes())
+func saveState(db dbm.DB, state State, key []byte) {
+	nextHeight := state.LastBlockHeight + 1
+	saveValidatorsInfo(db, nextHeight, state.LastHeightValidatorsChanged, state.Validators)
+	saveConsensusParamsInfo(db, nextHeight, state.LastHeightConsensusParamsChanged, state.ConsensusParams)
+	db.SetSync(stateKey, state.Bytes())
 }
 
 //------------------------------------------------------------------------
@@ -173,11 +173,17 @@ func LoadValidators(db dbm.DB, height int64) (*types.ValidatorSet, error) {
 	}
 
 	if valInfo.ValidatorSet == nil {
-		valInfo = loadValidatorsInfo(db, valInfo.LastHeightChanged)
-		if valInfo == nil {
-			cmn.PanicSanity(fmt.Sprintf(`Couldn't find validators at height %d as
-                        last changed from height %d`, valInfo.LastHeightChanged, height))
+		valInfo2 := loadValidatorsInfo(db, valInfo.LastHeightChanged)
+		if valInfo2 == nil {
+			panic(
+				fmt.Sprintf(
+					"Couldn't find validators at height %d as last changed from height %d",
+					valInfo.LastHeightChanged,
+					height,
+				),
+			)
 		}
+		valInfo = valInfo2
 	}
 
 	return valInfo.ValidatorSet, nil
@@ -238,11 +244,17 @@ func LoadConsensusParams(db dbm.DB, height int64) (types.ConsensusParams, error)
 	}
 
 	if paramsInfo.ConsensusParams == empty {
-		paramsInfo = loadConsensusParamsInfo(db, paramsInfo.LastHeightChanged)
-		if paramsInfo == nil {
-			cmn.PanicSanity(fmt.Sprintf(`Couldn't find consensus params at height %d as
-                        last changed from height %d`, paramsInfo.LastHeightChanged, height))
+		paramsInfo2 := loadConsensusParamsInfo(db, paramsInfo.LastHeightChanged)
+		if paramsInfo2 == nil {
+			panic(
+				fmt.Sprintf(
+					"Couldn't find consensus params at height %d as last changed from height %d",
+					paramsInfo.LastHeightChanged,
+					height,
+				),
+			)
 		}
+		paramsInfo = paramsInfo2
 	}
 
 	return paramsInfo.ConsensusParams, nil

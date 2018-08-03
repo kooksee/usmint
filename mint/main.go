@@ -1,12 +1,12 @@
 package mint
 
 import (
-	"github.com/tendermint/abci/types"
 	"github.com/kooksee/kdb"
 	kts "github.com/kooksee/usmint/types"
 	"github.com/kooksee/usmint/cmn"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/kooksee/usmint/types/code"
+	"github.com/tendermint/tendermint/abci/types"
 )
 
 func New() *Mint {

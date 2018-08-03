@@ -6,10 +6,10 @@ import (
 	"github.com/kooksee/kdb"
 	"github.com/kooksee/usmint/types/consts"
 	"errors"
-	"github.com/kooksee/usmint/cmn"
+	"ethtools/cmn"
 )
 
-func NewToken(address common.Address, db *kdb.KDB) *Token {
+func NewToken(address common.Address, db kdb.IKDB) *Token {
 	return &Token{address: address, name: consts.TokenPrefix, db: db.KHash([]byte(consts.TokenPrefix))}
 }
 
@@ -19,7 +19,7 @@ type Token struct {
 	IToken
 	address common.Address
 	name    string
-	db      *kdb.KHash
+	db      kdb.IKHash
 }
 
 // InitToken 初始化token

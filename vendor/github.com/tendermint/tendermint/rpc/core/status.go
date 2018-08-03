@@ -4,63 +4,64 @@ import (
 	"bytes"
 	"time"
 
+	cmn "github.com/tendermint/tendermint/libs/common"
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	sm "github.com/tendermint/tendermint/state"
 	"github.com/tendermint/tendermint/types"
-	cmn "github.com/tendermint/tmlibs/common"
 )
 
 // Get Tendermint status including node info, pubkey, latest block
 // hash, app hash, block height and time.
 //
 // ```shell
-// curl 'localhost:46657/status'
+// curl 'localhost:26657/status'
 // ```
 //
 // ```go
-// client := client.NewHTTP("tcp://0.0.0.0:46657", "/websocket")
+// client := client.NewHTTP("tcp://0.0.0.0:26657", "/websocket")
 // result, err := client.Status()
 // ```
 //
 // > The above command returns JSON structured like this:
 //
 // ```json
-// {
-// 	"result": {
-//		"sync_info": {
-// 			"syncing": false,
-// 			"latest_block_time": "2017-12-07T18:19:47.617Z",
-// 			"latest_block_height": 6,
-// 			"latest_app_hash": "",
-// 			"latest_block_hash": "A63D0C3307DEDCCFCC82ED411AE9108B70B29E02",
-//		}
-//		"validator_info": {
-// 			"pub_key": {
-// 				"data": "8C9A68070CBE33F9C445862BA1E9D96A75CEB68C0CF6ADD3652D07DCAC5D0380",
-// 				"type": "ed25519"
-// 			},
-//			"voting_power": 10
-//		}
-// 		"node_info": {
-// 			"other": [
-// 				"wire_version=0.7.2",
-// 				"p2p_version=0.5.0",
-// 				"consensus_version=v1/0.2.2",
-// 				"rpc_version=0.7.0/3",
-// 				"tx_index=on",
-// 				"rpc_addr=tcp://0.0.0.0:46657"
-// 			],
-// 			"version": "0.13.0-14ccc8b",
-// 			"listen_addr": "10.0.2.15:46656",
-// 			"remote_addr": "",
-// 			"network": "test-chain-qhVCa2",
-// 			"moniker": "vagrant-ubuntu-trusty-64",
-// 			"pub_key": "844981FE99ABB19F7816F2D5E94E8A74276AB1153760A7799E925C75401856C6",
-// 		}
-// 	},
-// 	"id": "",
-// 	"jsonrpc": "2.0"
-// }
+//{
+//  "jsonrpc": "2.0",
+//  "id": "",
+//  "result": {
+//    "node_info": {
+//      "id": "562dd7f579f0ecee8c94a11a3c1e378c1876f433",
+//      "listen_addr": "192.168.1.2:26656",
+//      "network": "test-chain-I6zScH",
+//      "version": "0.19.0",
+//      "channels": "4020212223303800",
+//      "moniker": "Ethans-MacBook-Pro.local",
+//      "other": [
+//        "amino_version=0.9.8",
+//        "p2p_version=0.5.0",
+//        "consensus_version=v1/0.2.2",
+//        "rpc_version=0.7.0/3",
+//        "tx_index=on",
+//        "rpc_addr=tcp://0.0.0.0:26657"
+//      ]
+//    },
+//    "sync_info": {
+//      "latest_block_hash": "2D4D7055BE685E3CB2410603C92AD37AE557AC59",
+//      "latest_app_hash": "0000000000000000",
+//      "latest_block_height": 231,
+//      "latest_block_time": "2018-04-27T23:18:08.459766485-04:00",
+//      "catching_up": false
+//    },
+//    "validator_info": {
+//      "address": "5875562FF0FFDECC895C20E32FC14988952E99E7",
+//      "pub_key": {
+//        "type": "tendermint/PubKeyEd25519",
+//        "value": "PpDJRUrLG2RgFqYYjawfn/AcAgacSXpLFrmfYYQnuzE="
+//      },
+//      "voting_power": 10
+//    }
+//  }
+//}
 // ```
 func Status() (*ctypes.ResultStatus, error) {
 	latestHeight := blockStore.Height()
@@ -79,6 +80,11 @@ func Status() (*ctypes.ResultStatus, error) {
 
 	latestBlockTime := time.Unix(0, latestBlockTimeNano)
 
+	var votingPower int64
+	if val := validatorAtHeight(latestHeight); val != nil {
+		votingPower = val.VotingPower
+	}
+
 	result := &ctypes.ResultStatus{
 		NodeInfo: p2pSwitch.NodeInfo(),
 		SyncInfo: ctypes.SyncInfo{
@@ -86,21 +92,29 @@ func Status() (*ctypes.ResultStatus, error) {
 			LatestAppHash:     latestAppHash,
 			LatestBlockHeight: latestHeight,
 			LatestBlockTime:   latestBlockTime,
-			Syncing:           consensusReactor.FastSync(),
+			CatchingUp:        consensusReactor.FastSync(),
 		},
-		ValidatorInfo: ctypes.ValidatorInfo{PubKey: pubKey},
-	}
-
-	// add ValidatorStatus if node is a validator
-	if val := validatorAtHeight(latestHeight); val != nil {
-		result.ValidatorInfo.VotingPower = val.VotingPower
+		ValidatorInfo: ctypes.ValidatorInfo{
+			Address:     pubKey.Address(),
+			PubKey:      pubKey,
+			VotingPower: votingPower,
+		},
 	}
 
 	return result, nil
 }
 
+const consensusTimeout = time.Second
+
 func validatorAtHeight(h int64) *types.Validator {
-	lastBlockHeight, vals := consensusState.GetValidators()
+	lastBlockHeight, vals := getValidatorsWithTimeout(
+		consensusState,
+		consensusTimeout,
+	)
+
+	if lastBlockHeight == -1 {
+		return nil
+	}
 
 	privValAddress := pubKey.Address()
 
@@ -125,4 +139,33 @@ func validatorAtHeight(h int64) *types.Validator {
 	}
 
 	return nil
+}
+
+type validatorRetriever interface {
+	GetValidators() (int64, []*types.Validator)
+}
+
+// NOTE: Consensus might halt, but we still need to process RPC requests (at
+// least for endpoints whole output does not depend on consensus state).
+func getValidatorsWithTimeout(
+	vr validatorRetriever,
+	t time.Duration,
+) (int64, []*types.Validator) {
+	resultCh := make(chan struct {
+		lastBlockHeight int64
+		vals            []*types.Validator
+	})
+	go func() {
+		h, v := vr.GetValidators()
+		resultCh <- struct {
+			lastBlockHeight int64
+			vals            []*types.Validator
+		}{h, v}
+	}()
+	select {
+	case res := <-resultCh:
+		return res.lastBlockHeight, res.vals
+	case <-time.After(t):
+		return -1, []*types.Validator{}
+	}
 }

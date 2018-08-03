@@ -5,8 +5,8 @@ import (
 	"io/ioutil"
 	"time"
 
-	"github.com/tendermint/go-crypto"
-	cmn "github.com/tendermint/tmlibs/common"
+	"github.com/tendermint/tendermint/crypto"
+	cmn "github.com/tendermint/tendermint/libs/common"
 )
 
 //------------------------------------------------------------
@@ -26,22 +26,12 @@ type GenesisDoc struct {
 	ConsensusParams *ConsensusParams   `json:"consensus_params,omitempty"`
 	Validators      []GenesisValidator `json:"validators"`
 	AppHash         cmn.HexBytes       `json:"app_hash"`
-	AppStateJSON    json.RawMessage    `json:"app_state,omitempty"`
-	AppOptions      json.RawMessage    `json:"app_options,omitempty"` // DEPRECATED
-}
-
-// AppState returns raw application state.
-// TODO: replace with AppState field during next breaking release (0.18)
-func (genDoc *GenesisDoc) AppState() json.RawMessage {
-	if len(genDoc.AppOptions) > 0 {
-		return genDoc.AppOptions
-	}
-	return genDoc.AppStateJSON
+	AppState        json.RawMessage    `json:"app_state,omitempty"`
 }
 
 // SaveAs is a utility method for saving GenensisDoc as a JSON file.
 func (genDoc *GenesisDoc) SaveAs(file string) error {
-	genDocBytes, err := cdc.MarshalJSON(genDoc)
+	genDocBytes, err := cdc.MarshalJSONIndent(genDoc, "", "  ")
 	if err != nil {
 		return err
 	}

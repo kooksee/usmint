@@ -5,10 +5,9 @@ package app
  */
 
 import (
-	"github.com/tendermint/abci/types"
 	"github.com/kooksee/usmint/mint"
-	"github.com/kooksee/usmint/cmn"
-	"github.com/kooksee/usmint/config"
+	"github.com/tendermint/tendermint/abci/types"
+	"ethtools/cmn"
 )
 
 type KApp struct {
@@ -25,7 +24,7 @@ func New() *KApp {
 // 实现abci的Info协议
 func (app *KApp) Info(req types.RequestInfo) (res types.ResponseInfo) {
 
-	res.Data = config.DefaultCfg().Moniker
+	//res.Data = config.DefaultCfg().Moniker
 	res.LastBlockHeight = app.m.State().Height
 	res.LastBlockAppHash = app.m.State().AppHash
 	res.Version = req.Version
@@ -64,7 +63,7 @@ func (app *KApp) InitChain(req types.RequestInitChain) types.ResponseInitChain {
 }
 
 func (app *KApp) BeginBlock(req types.RequestBeginBlock) types.ResponseBeginBlock {
-	cmn.ErrPipeLog("app BeginBlock error", app.m.BeginBlock(nil))
+	cmn.ErrPipeLog("app BeginBlock error", app.m.BeginBlock(req))
 	return types.ResponseBeginBlock{}
 }
 
