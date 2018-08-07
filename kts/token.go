@@ -28,18 +28,17 @@ func (t *Token) InitToken(amount *big.Int) error {
 
 	b, err := t.db.Exist([]byte(consts.TokenAddress))
 	if err != nil {
-		return err
+		return cmn.ErrPipe("Token.InitToken",err)
+	}
+	if b {
+		return errors.New("")
 	}
 
-	if !b {
-		return cmn.ErrPipe(
-			"Token InitToken Error",
-			t.db.Set([]byte(consts.TotalSupply), amount.Bytes()),
-			t.db.Set([]byte(consts.TokenAddress), amount.Bytes()),
-		)
-	}
-
-	return nil
+	return cmn.ErrPipe(
+		"Token InitToken Error",
+		cmn.ErrCurry(t.db.Set, []byte(consts.TotalSupply), amount.Bytes()),
+		cmn.ErrCurry(t.db.Set, []byte(consts.TokenAddress), amount.Bytes()),
+	)
 }
 
 // TransferTo 转账

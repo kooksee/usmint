@@ -4,7 +4,6 @@ import (
 	"github.com/kooksee/kdb"
 	"github.com/kooksee/usmint/cmn"
 	"github.com/kooksee/usmint/kts/consts"
-	"encoding/json"
 )
 
 func NewState(dbs ... kdb.IKDB) *State {
@@ -28,12 +27,12 @@ type State struct {
 
 func (s *State) Load() {
 	stateBytes, err := s.db.Get([]byte(s.name))
-	cmn.MustNotErr("state load error", err, cmn.ErrCurry(json.Unmarshal, stateBytes, s))
+	cmn.MustNotErr("State.Load error", err, cmn.ErrCurry(cmn.JsonUnmarshal, stateBytes, s))
 }
 
 // 保存状态值
 func (s *State) Save() []byte {
-	stateBytes, err := json.Marshal(s)
-	cmn.MustNotErr("state save error", err, cmn.ErrCurry(s.db.Set, []byte(s.name), stateBytes))
+	stateBytes, err := cmn.JsonMarshal(s)
+	cmn.MustNotErr("State.Save error", err, cmn.ErrCurry(s.db.Set, []byte(s.name), stateBytes))
 	return stateBytes
 }

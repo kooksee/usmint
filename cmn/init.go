@@ -9,6 +9,7 @@ import (
 var ErrPipe = cmn.Err.ErrWithMsg
 var ErrCurry = cmn.Err.Curry
 var F = cmn.F
+var StrJoin = cmn.StrJoin
 
 var MustNotErr = cmn.Err.MustNotErr
 var JsonMarshal = cmn.Json.Marshal

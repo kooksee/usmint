@@ -5,7 +5,6 @@ import (
 	"github.com/kooksee/usmint/kts/consts"
 	"github.com/kooksee/kdb"
 	"github.com/kooksee/usmint/cmn"
-	"encoding/json"
 	"github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/encoding/amino"
@@ -70,7 +69,8 @@ func (v *Validator) Check() error {
 func (v *Validator) UpdateValidator(val *types.Validator) error {
 	logger.Error("update node", "node", val.String())
 
-	pk, err := cryptoAmino.PubKeyFromBytes(val.GetPubKey())
+	ppk := val.GetPubKey()
+	pk, err := cryptoAmino.PubKeyFromBytes((&ppk).GetData())
 	if err = cmn.ErrPipe("pubkey parse error", err); err != nil {
 		return err
 	}
@@ -78,7 +78,7 @@ func (v *Validator) UpdateValidator(val *types.Validator) error {
 	// power等于-1的时候,开放节点的权限
 	if val.Power == -1 {
 		val.Power = 0
-		val1, err := json.Marshal(val)
+		val1, err := cmn.JsonMarshal(val)
 		return cmn.ErrPipe("save node error", err, cmn.ErrCurry(v.db.Set, pk.Address().Bytes(), val1))
 	}
 
@@ -88,12 +88,12 @@ func (v *Validator) UpdateValidator(val *types.Validator) error {
 		return cmn.ErrPipe("delete node error", cmn.ErrCurry(v.db.Del, pk.Address().Bytes()))
 	}
 
-	val1, err := json.Marshal(val)
+	val1, err := cmn.JsonMarshal(val)
 	return cmn.ErrPipe("save node error", err, cmn.ErrCurry(v.db.Set, pk.Address().Bytes(), val1))
 }
 
 func (v *Validator) Decode(val []byte) error {
-	return cmn.ErrPipe("validator decode error", cmn.ErrCurry(json.Unmarshal, val, v))
+	return cmn.ErrPipe("validator decode error", cmn.ErrCurry(cmn.JsonUnmarshal, val, v))
 }
 
 func (v *Validator) Delete() error {
