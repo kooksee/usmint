@@ -16,6 +16,12 @@ type IMint interface {
 	MinerDel(address crypto.Address) error
 
 	// metadata 存储
-	MetaDataSet(dna []byte,data []byte)error
-	MetaDataGet(dna []byte)[]byte
+	MetaDataSet(dna []byte, data []byte) error
+	MetaDataGet(dna []byte) []byte
+}
+
+type IKMsg interface {
+	OnCheck(data []byte) error
+	OnHandle(data []byte) error
+	Router() string
 }
