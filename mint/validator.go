@@ -51,7 +51,11 @@ func (v *ValidatorManager) CheckValidator(val *types.Validator) error {
 func (v *ValidatorManager) UpdateValidator(val *types.Validator) error {
 	logger.Error("update node", "node", val.String())
 
-	pk, err := v.GetPubkey([]byte(val.PubKey.String()))
+	sss, err := val.PubKey.Marshal()
+	if err != nil {
+		return err
+	}
+	pk, err := v.GetPubkey(sss)
 	if err = cmn.ErrPipe("ValidatorManager UpdateValidator error", err); err != nil {
 		return err
 	}
