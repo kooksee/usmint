@@ -7,15 +7,9 @@ import (
 )
 
 // 矿工设置
-
-func NewMiner(dbs ... kdb.IKDB) *Miner {
-	db1 := db
-	if len(dbs) > 0 {
-		db1 = dbs[0]
-	}
-
+func NewMiner() *Miner {
 	name := consts.Meta(consts.MinerPrefix)
-	return &Miner{name: name, db: db1.KHash([]byte(name))}
+	return &Miner{name: name, db: db.KHash([]byte(name))}
 }
 
 type Miner struct {

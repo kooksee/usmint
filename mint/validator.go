@@ -1,64 +1,46 @@
 package mint
 
 import (
-	"errors"
 	"github.com/kooksee/usmint/kts/consts"
 	"github.com/kooksee/kdb"
 	"github.com/kooksee/usmint/cmn"
 	"github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/encoding/amino"
+	"github.com/kooksee/usmint/kts"
+	"errors"
 )
 
-func NewValidator(dbs ... kdb.IKDB) *Validator {
-	db1 := db
-	if len(dbs) > 0 {
-		db1 = dbs[0]
-	}
-
+func NewValidatorManager() *ValidatorManager {
 	name := consts.ValidatorPrefix
-	return &Validator{name: name, db: db1.KHash([]byte(name))}
+	return &ValidatorManager{name: name, db: db.KHash([]byte(name))}
 }
 
 // Validator
-type Validator struct {
+type ValidatorManager struct {
+	kts.IValidatorManager
 	db     kdb.IKHash
 	name   string
 	pubkey crypto.PubKey
-
-	PubKey []byte `json:"pubkey,omitempty" mapstructure:"pubkey"`
-	Power  int64  `json:"power,omitempty" mapstructure:"power"`
 }
 
-func (v *Validator) GetPubkey() (crypto.PubKey, error) {
-	if v.pubkey != nil {
-		return v.pubkey, nil
-	}
-
-	pk, err := cryptoAmino.PubKeyFromBytes(v.PubKey)
+func (v *ValidatorManager) GetPubkey(pubk []byte) (crypto.PubKey, error) {
+	pk, err := cryptoAmino.PubKeyFromBytes(pubk)
 	if err != nil {
-		return nil, cmn.ErrPipe("validator parse pubkey", err)
+		return nil, cmn.ErrPipe("ValidatorManager parse pubkey error", err)
 	}
-
-	v.pubkey = pk
 	return pk, nil
 }
 
-func (v *Validator) Has(pk crypto.PubKey) bool {
-	b, err := v.db.Exist(pk.Address().Bytes())
-	cmn.ErrPipe("validator has error", err)
-	return b
-}
-
 // Check 检查Power值和Pubkey
-func (v *Validator) Check() error {
+func (v *ValidatorManager) CheckValidator(val *types.Validator) error {
 
-	if v.Power > 9 || v.Power < -2 {
+	if val.Power > 9 || val.Power < -2 {
 		return errors.New("power值超过限制")
 	}
 
 	// 检查pubkey的格式是否合格
-	_, err := v.GetPubkey()
+	_, err := v.GetPubkey(val.PubKey.GetData())
 	if err != nil {
 		return err
 	}
@@ -66,7 +48,7 @@ func (v *Validator) Check() error {
 }
 
 // UpdateValidators 更新Validators
-func (v *Validator) UpdateValidator(val *types.Validator) error {
+func (v *ValidatorManager) UpdateValidator(val *types.Validator) error {
 	logger.Error("update node", "node", val.String())
 
 	ppk := val.GetPubKey()
@@ -92,21 +74,7 @@ func (v *Validator) UpdateValidator(val *types.Validator) error {
 	return cmn.ErrPipe("save node error", err, cmn.ErrCurry(v.db.Set, pk.Address().Bytes(), val1))
 }
 
-func (v *Validator) Decode(val []byte) error {
-	return cmn.ErrPipe("validator decode error", cmn.ErrCurry(cmn.JsonUnmarshal, val, v))
-}
-
-func (v *Validator) Delete() error {
-	pk, err := v.GetPubkey()
-	return cmn.ErrPipe("Validator.Delete error", err, cmn.ErrCurry(v.db.Del, pk.Address().Bytes()))
-}
-
-func (v *Validator) Save() error {
-	pk, err := v.GetPubkey()
-	if err != nil {
-		return err
-	}
-
-	val, err := cmn.JsonMarshal(v)
-	return cmn.ErrPipe("Validator.Save Error", err, cmn.ErrCurry(v.db.Set, pk.Address().Bytes(), val))
+func (v *ValidatorManager) DecodeValidator(val []byte) (*kts.Validator, error) {
+	vt := &kts.Validator{}
+	return vt, cmn.ErrPipe("validator decode error", cmn.ErrCurry(cmn.JsonUnmarshal, val, vt))
 }

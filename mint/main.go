@@ -13,7 +13,7 @@ func New() *Mint {
 	return &Mint{
 		state: NewState(),
 		db:    db,
-		val:   NewValidator(),
+		val:   NewValidatorManager(),
 		miner: NewMiner(),
 	}
 }
@@ -23,7 +23,7 @@ type Mint struct {
 	valUpdates []types.Validator
 	state      *State
 	db         kdb.IKDB
-	val        *Validator
+	val        *ValidatorManager
 	miner      *Miner
 }
 
@@ -79,7 +79,7 @@ func (m *Mint) CheckTx(data []byte) types.ResponseCheckTx {
 
 	// 验证节点权限
 	// 检查发送tx的节点有没有在区块链中,如果没有,那么该节点没有发送tx的权利
-	if !m.val.Has(tx.GetPubkey()) {
+	if !m.val.Has(tx.GetPubkey().Address()) {
 		return types.ResponseCheckTx{
 			Code: code.ErrInternal.Code,
 			Log:  cmn.F("the node %s does not exist", tx.Pubkey),
@@ -90,8 +90,7 @@ func (m *Mint) CheckTx(data []byte) types.ResponseCheckTx {
 	case "validator":
 		if err := cmn.ErrPipe(
 			"CheckTx validator error",
-			cmn.ErrCurry(m.val.Check),
-			cmn.ErrCurry(m.val.Decode, data),
+			cmn.ErrCurry(m.val.CheckValidator,),
 			cmn.ErrCurry(m.UpdateValidators, types.Validator{PubKey: types.PubKey{}, Power: m.val.Power})); err != nil {
 			return types.ResponseCheckTx{
 				Code: code.ErrInternal.Code,
