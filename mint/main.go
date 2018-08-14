@@ -87,11 +87,11 @@ func (m *Mint) CheckTx(data []byte) types.ResponseCheckTx {
 	}
 
 	switch tx.Event {
+	// cmn.ErrCurry(m.UpdateValidators, types.Validator{PubKey: types.PubKey{}, Power: m.val.Power})
 	case "validator":
 		if err := cmn.ErrPipe(
 			"CheckTx validator error",
-			cmn.ErrCurry(m.val.CheckValidator,),
-			cmn.ErrCurry(m.UpdateValidators, types.Validator{PubKey: types.PubKey{}, Power: m.val.Power})); err != nil {
+			cmn.ErrCurry(m.val.CheckValidator, )); err != nil {
 			return types.ResponseCheckTx{
 				Code: code.ErrInternal.Code,
 				Log:  cmn.ErrPipe("Mint CheckTx DecodeTx Error", err).Error(),

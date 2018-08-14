@@ -27,7 +27,7 @@ type ValidatorManager struct {
 func (v *ValidatorManager) GetPubkey(pubk []byte) (crypto.PubKey, error) {
 	pk, err := cryptoAmino.PubKeyFromBytes(pubk)
 	if err != nil {
-		return nil, cmn.ErrPipe("ValidatorManager parse pubkey error", err)
+		return nil, cmn.ErrPipe("ValidatorManager GetPubkey error", err)
 	}
 	return pk, nil
 }
@@ -51,9 +51,8 @@ func (v *ValidatorManager) CheckValidator(val *types.Validator) error {
 func (v *ValidatorManager) UpdateValidator(val *types.Validator) error {
 	logger.Error("update node", "node", val.String())
 
-	ppk := val.GetPubKey()
-	pk, err := cryptoAmino.PubKeyFromBytes((&ppk).GetData())
-	if err = cmn.ErrPipe("pubkey parse error", err); err != nil {
+	pk, err := v.GetPubkey([]byte(val.PubKey.String()))
+	if err = cmn.ErrPipe("ValidatorManager UpdateValidator error", err); err != nil {
 		return err
 	}
 

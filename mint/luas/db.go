@@ -4,6 +4,7 @@ import (
 	"github.com/yuin/gopher-lua"
 	"github.com/kooksee/kdb"
 	"github.com/kooksee/usmint/cmn"
+	"math/big"
 )
 
 func NewDb(contractAddress []byte) *ContractDb {
@@ -26,61 +27,47 @@ type CDb struct {
 }
 
 func (c *CDb) SetStr(key, value string) {
-	cmn.ErrPipeLog("CDb SetStr Error", c.db.WithTx(func(kh *kdb.KHBatch) error {
+	cmn.ErrPipe("CDb SetStr Error", c.db.WithBatch(func(kh kdb.IKHBatch) error {
 		return kh.Set([]byte(key), []byte(value))
 	}))
 }
 
 func (c *CDb) Str(key string) string {
 	val, err := c.db.Get([]byte(key))
-	if err := cmn.ErrPipeLog("CDb Str Error", err); err != nil {
+	if err := cmn.ErrPipe("CDb Str Error", err); err != nil {
 		return ""
 	}
 	return string(val)
 }
 
 func (c *CDb) SetInt(key string, value int) {
-	cmn.ErrPipeLog("CDb SetInt Error", c.db.WithTx(func(kh *kdb.KHBatch) error {
-		return kh.Set([]byte(key), cmn.Int64ToByte(int64(value)))
+	cmn.ErrPipe("CDb SetInt Error", c.db.WithBatch(func(kh kdb.IKHBatch) error {
+		return kh.Set([]byte(key), big.NewInt(int64(value)).Bytes())
 	}))
 }
 
 func (c *CDb) Int(key string) int {
 	val, err := c.db.Get([]byte(key))
-	if err := cmn.ErrPipeLog("CDb Int Error", err); err != nil {
+	if err := cmn.ErrPipe("CDb Int Error", err); err != nil {
 		return 0
 	}
-	return int(cmn.ByteToInt64(val))
-}
-
-func (c *CDb) SetFloat(key string, value float64) {
-	cmn.ErrPipeLog("CDb SetFloat Error", c.db.WithTx(func(kh *kdb.KHBatch) error {
-		return kh.Set([]byte(key), cmn.Float64ToByte(value))
-	}))
-}
-
-func (c *CDb) Float(key string) float64 {
-	val, err := c.db.Get([]byte(key))
-	if err := cmn.ErrPipeLog("CDb Float Error", err); err != nil {
-		return 0
-	}
-	return cmn.ByteToFloat64(val)
+	return int(big.NewInt(0).SetBytes(val).Int64())
 }
 
 func (c *CDb) SetTable(key string, m map[string]interface{}) {
-	c.db.WithTx(func(kh *kdb.KHBatch) error {
+	c.db.WithBatch(func(kh kdb.IKHBatch) error {
 		val, err := json.Marshal(m)
-		return cmn.ErrPipeLog("CDb SetTable Error", err, kh.Set([]byte(key), val))
+		return cmn.ErrPipe("CDb SetTable Error", err, kh.Set([]byte(key), val))
 	})
 }
 
 func (c *CDb) Table(key string) lua.LValue {
 	val, err := c.db.Get([]byte(key))
-	if err := cmn.ErrPipeLog("CDb Table Get Error", err); err != nil {
+	if err := cmn.ErrPipe("CDb Table Get Error", err); err != nil {
 		return c.l.NewTable()
 	}
 	v, err := decodeRaw(c.l, val)
-	if err := cmn.ErrPipeLog("CDb Table decodeRaw Error", err); err != nil {
+	if err := cmn.ErrPipe("CDb Table decodeRaw Error", err); err != nil {
 		return c.l.NewTable()
 	}
 	return v

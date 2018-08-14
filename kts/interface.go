@@ -12,6 +12,7 @@ type IMint interface {
 
 	//	矿工地址设置
 	MinerSet(address crypto.Address, address2 common.Address) error
+
 	//	矿工地址删除
 	MinerDel(address crypto.Address) error
 

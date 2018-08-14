@@ -50,11 +50,8 @@ func main() {
 		cmds.VersionCmd,
 	)
 
-	// DefaultNewNode function
-	nodeFunc := node.DefaultNewNode
-
 	// Create & start node
-	rootCmd.AddCommand(commands.NewRunNodeCmd(nodeFunc))
+	rootCmd.AddCommand(commands.NewRunNodeCmd(DefaultNewNode))
 
 	if err := cli.PrepareBaseCmd(rootCmd, "K", os.ExpandEnv("$PWD/kdata")).Execute(); err != nil {
 		panic(err)
