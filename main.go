@@ -27,7 +27,7 @@ func DefaultNewNode(config *config.Config, logger log.Logger) (*node.Node, error
 		proxy.NewLocalClientCreator(app.New()),
 		node.DefaultGenesisDocProviderFunc(config),
 		node.DefaultDBProvider,
-		node.DefaultMetricsProvider,
+		node.DefaultMetricsProvider(config.Instrumentation),
 		logger,
 	)
 }

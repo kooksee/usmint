@@ -8,7 +8,7 @@ import (
 
 func NewState() *State {
 	name := consts.Meta(consts.StatePrefix)
-	return &State{db: db.KHash([]byte(name))}
+	return &State{db: db.KHash([]byte(name)),Height:100}
 }
 
 type State struct {

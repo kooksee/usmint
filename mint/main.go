@@ -5,8 +5,9 @@ import (
 	"github.com/kooksee/usmint/kts"
 	"github.com/kooksee/usmint/kts/code"
 	"github.com/kooksee/usmint/cmn"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/crypto"
+	"encoding/hex"
 )
 
 func New() *Mint {
@@ -31,23 +32,14 @@ func (m *Mint) State() *State {
 	return m.state
 }
 
-// UpdateValidators 更新Validators
-func (m *Mint) UpdateValidators(vals ... types.Validator) error {
-	for _, val := range vals {
-		if err := m.val.UpdateValidator(&val); err != nil {
-			return err
-		}
-
-		m.valUpdates = append(m.valUpdates, val)
-	}
-	return nil
-}
-
 // InitChain 初始化chain
 func (m *Mint) InitChain(vals ... types.Validator) error {
 	for _, val := range vals {
-		if err := m.val.UpdateValidator(&val); err != nil {
-			return err
+		if err := m.val.UpdateValidator(&kts.Validator{
+			Address: hex.EncodeToString(val.Address),
+			Power:   val.Power,
+		}); err != nil {
+			return cmn.ErrPipe("Mint InitChain", err)
 		}
 	}
 	return nil
@@ -87,14 +79,13 @@ func (m *Mint) CheckTx(data []byte) types.ResponseCheckTx {
 	}
 
 	switch tx.Event {
-	// cmn.ErrCurry(m.UpdateValidators, types.Validator{PubKey: types.PubKey{}, Power: m.val.Power})
-	case "validator":
-		if err := cmn.ErrPipe(
-			"CheckTx validator error",
-			cmn.ErrCurry(m.val.CheckValidator, )); err != nil {
+	case "node_manage":
+		val, err := kts.DecodeValidator(tx.Data)
+		if err := cmn.ErrPipe("Mint CheckTx node_manage Error", err,
+			cmn.ErrCurry(m.val.CheckValidator, val)); err != nil {
 			return types.ResponseCheckTx{
 				Code: code.ErrInternal.Code,
-				Log:  cmn.ErrPipe("Mint CheckTx DecodeTx Error", err).Error(),
+				Log:  err.Error(),
 			}
 		}
 	}
@@ -108,17 +99,19 @@ func (m *Mint) DeliverTx(data []byte) types.ResponseDeliverTx {
 	if err != nil {
 		return types.ResponseDeliverTx{
 			Code: code.Ok.Code,
-			Log:  cmn.ErrPipe("Mint.DeliverTx", err).Error(),
+			Log:  cmn.ErrPipe("Mint DeliverTx", err).Error(),
 		}
 	}
 
 	switch tx.Event {
-	case "node.validator":
+	case "node_manage":
+		//	节点的加入
+		//	如果节点的power是0，那么就不加入了
 	}
 
 	// 成功之后,计算一个新的app hash
 	// 根据之前的app hash计算,保证用户无法篡改数据
-	m.state.AppHash = crypto.Keccak256(m.state.AppHash, data)
+	m.state.AppHash = crypto.Ripemd160(append(m.state.AppHash, data...))
 	return types.ResponseDeliverTx{Code: code.Ok.Code}
 }
 

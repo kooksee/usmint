@@ -179,7 +179,7 @@ func MakeGenesisState(genDoc *types.GenesisDoc) (State, error) {
 
 		ChainID: genDoc.ChainID,
 
-		LastBlockHeight: 0,
+		LastBlockHeight: 100,
 		LastBlockID:     types.BlockID{},
 		LastBlockTime:   genDoc.GenesisTime,
 
