@@ -22,7 +22,7 @@ func DefaultNewNode(config *config.Config, logger log.Logger) (*node.Node, error
 	// init config
 	cmn.InitCfg(config)
 
-	return node.NewNode(config,
+	n, err := node.NewNode(config,
 		privval.LoadOrGenFilePV(config.PrivValidatorFile()),
 		proxy.NewLocalClientCreator(app.New()),
 		node.DefaultGenesisDocProviderFunc(config),
@@ -30,6 +30,11 @@ func DefaultNewNode(config *config.Config, logger log.Logger) (*node.Node, error
 		node.DefaultMetricsProvider(config.Instrumentation),
 		logger,
 	)
+
+	// 获得node
+	cmn.InitNode(n)
+
+	return n, err
 }
 
 func main() {

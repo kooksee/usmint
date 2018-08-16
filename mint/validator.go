@@ -5,10 +5,9 @@ import (
 	"github.com/kooksee/kdb"
 	"github.com/kooksee/usmint/cmn"
 	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/encoding/amino"
 	"github.com/kooksee/usmint/kts"
-	"errors"
 	"encoding/hex"
+	"github.com/tendermint/tendermint/abci/types"
 )
 
 func NewValidatorManager() *ValidatorManager {
@@ -24,21 +23,27 @@ type ValidatorManager struct {
 	pubkey crypto.PubKey
 }
 
-func (v *ValidatorManager) GetPubkey(pubk []byte) (crypto.PubKey, error) {
-	pk, err := cryptoAmino.PubKeyFromBytes(pubk)
-	if err != nil {
-		return nil, cmn.ErrPipe("ValidatorManager GetPubkey error", err)
-	}
-	return pk, nil
-}
-
 // Check 检查Power值和Pubkey
-func (v *ValidatorManager) CheckValidator(val *kts.Validator) error {
+func (v *ValidatorManager) CheckValidatorWithTx(tx *kts.Transaction) error {
+	val, err := kts.DecodeValidator(tx.Data)
+	if err != nil {
+		return cmn.ErrPipe("ValidatorManager CheckValidatorWithTx", err)
+	}
 
 	if val.Power > 9 || val.Power < -2 {
-		return errors.New("power值超过限制")
+		return cmn.Err("ValidatorManager CheckValidatorWithTx: power值超过限制")
 	}
+	
 	return nil
+}
+
+func (v *ValidatorManager) UpdateValidatorWithTx(tx *kts.Transaction) (types.Validator, error) {
+	val, err := kts.DecodeValidator(tx.Data)
+	return types.Validator{
+		Address: val.GetAddress(),
+		PubKey:  val.PubKey,
+		Power:   val.Power,
+	}, cmn.ErrPipe("ValidatorManager UpdateValidatorWithTx", err, cmn.ErrCurry(v.UpdateValidator, val))
 }
 
 // UpdateValidators 更新Validators

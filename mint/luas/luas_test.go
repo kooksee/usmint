@@ -73,7 +73,7 @@ person = {
 		panic(err)
 	}
 	var person Person
-	if err := Map(L,"person", &person); err != nil {
+	if err := Map(L, "person", &person); err != nil {
 		panic(err)
 	}
 
@@ -81,7 +81,7 @@ person = {
 }
 
 func TestName3(t *testing.T) {
-	ff:= func(d []byte) {
+	ff := func(d []byte) {
 		fmt.Println(len(d))
 	}
 	ff(nil)

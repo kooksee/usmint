@@ -35,16 +35,13 @@ func (m *Mint) State() *State {
 }
 
 // InitChain 初始化chain
-func (m *Mint) InitChain(vals ... types.Validator) error {
+func (m *Mint) InitChain(vals ... types.Validator) {
 	for _, val := range vals {
-		if err := m.val.UpdateValidator(&kts.Validator{
+		cmn.MustNotErr("Mint InitChain", m.val.UpdateValidator(&kts.Validator{
 			Address: hex.EncodeToString(val.Address),
 			Power:   val.Power,
-		}); err != nil {
-			return cmn.ErrPipe("Mint InitChain", err)
-		}
+		}))
 	}
-	return nil
 }
 
 // Commit 提交tx
@@ -82,17 +79,30 @@ func (m *Mint) CheckTx(data []byte) types.ResponseCheckTx {
 
 	switch tx.Event {
 	case "node_manage":
-		val, err := kts.DecodeValidator(tx.Data)
-		if err := cmn.ErrPipe("Mint CheckTx node_manage Error", err,
-			cmn.ErrCurry(m.val.CheckValidator, val)); err != nil {
+		if err := m.val.CheckValidatorWithTx(tx); err != nil {
 			return types.ResponseCheckTx{
 				Code: code.ErrInternal.Code,
-				Log:  err.Error(),
+				Log:  cmn.ErrPipe("Mint CheckTx node_manage", err).Error(),
 			}
 		}
 
 	case "sc_dp":
+		if err := m.sc.DeployCheckWithTx(tx); err != nil {
+			return types.ResponseCheckTx{
+				Code: code.ErrInternal.Code,
+				Log:  cmn.ErrPipe("Mint CheckTx sc_dp", err).Error(),
+			}
+		}
+
 	case "sc_call":
+		// 验证签名
+		if err := m.sc.CallCheckWithTx(tx); err != nil {
+			return types.ResponseCheckTx{
+				Code: code.ErrInternal.Code,
+				Log:  cmn.ErrPipe("Mint CheckTx sc_call", err).Error(),
+			}
+		}
+
 	}
 
 	return types.ResponseCheckTx{Code: code.Ok.Code}
@@ -110,8 +120,30 @@ func (m *Mint) DeliverTx(data []byte) types.ResponseDeliverTx {
 
 	switch tx.Event {
 	case "node_manage":
-		//	节点的加入
-		//	如果节点的power是0，那么就不加入了
+		if val, err := m.val.UpdateValidatorWithTx(tx); err != nil {
+			return types.ResponseDeliverTx{
+				Code: code.ErrInternal.Code,
+				Log:  err.Error(),
+			}
+		} else {
+			m.valUpdates = append(m.valUpdates, val)
+		}
+
+	case "sc_dp":
+		if err := m.sc.DeployWithTx(tx); err != nil {
+			return types.ResponseDeliverTx{
+				Code: code.ErrInternal.Code,
+				Log:  cmn.ErrPipe("Mint DeliverTx sc_dp", err).Error(),
+			}
+		}
+
+	case "sc_call":
+		if err := m.sc.CallWithOutRetWithTx(tx); err != nil {
+			return types.ResponseDeliverTx{
+				Code: code.ErrInternal.Code,
+				Log:  cmn.ErrPipe("Mint DeliverTx sc_call", err).Error(),
+			}
+		}
 	}
 
 	// 成功之后,计算一个新的app hash

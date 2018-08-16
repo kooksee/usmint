@@ -58,7 +58,7 @@ func (app *KApp) Query(reqQuery types.RequestQuery) (res types.ResponseQuery) {
 
 // Save the validators in the merkle tree
 func (app *KApp) InitChain(req types.RequestInitChain) types.ResponseInitChain {
-	cmn.MustNotErr("app InitChain error", app.m.InitChain(req.Validators...))
+	app.m.InitChain(req.Validators...)
 	return types.ResponseInitChain{}
 }
 

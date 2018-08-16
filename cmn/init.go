@@ -4,12 +4,13 @@ import (
 	"github.com/kooksee/cmn"
 	"github.com/tendermint/tendermint/libs/log"
 	"github.com/tendermint/tendermint/config"
+	"github.com/tendermint/tendermint/node"
 )
 
 var ErrPipe = cmn.Err.ErrWithMsg
 var ErrCurry = cmn.Err.Curry
 var F = cmn.F
-var Err=cmn.Err.Err
+var Err = cmn.Err.Err
 var StrJoin = cmn.StrJoin
 
 var MustNotErr = cmn.Err.MustNotErr
@@ -47,4 +48,18 @@ func GetCfg() *config.Config {
 		panic("please init config")
 	}
 	return cfg
+}
+
+var n *node.Node
+
+func GetNode() *node.Node {
+	if n == nil {
+		panic("please init node")
+	}
+	n.MempoolReactor()
+	return n
+}
+
+func InitNode(n1 *node.Node) {
+	n = n1
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/kooksee/usmint/kts"
 	"time"
 	"encoding/hex"
+	"github.com/tendermint/tendermint/abci/types"
 )
 
 func TestNodeJoin(t *testing.T) {
@@ -33,4 +34,9 @@ func TestNodeJoin(t *testing.T) {
 }
 
 func TestNodeLeave(t *testing.T) {
+}
+
+func TestPubK(t *testing.T) {
+	pp := types.Ed25519Validator(NodepriV.PubKey().Bytes(), 1)
+	println("pp", pp.PubKey.String())
 }

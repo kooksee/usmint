@@ -7,8 +7,6 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 )
 
-const Prefix = "contract:"
-
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
 var logger log.Logger
 var db kdb.IKDB

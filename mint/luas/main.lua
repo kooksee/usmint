@@ -11,13 +11,13 @@ init = {
     w = 9
 }
 
-function hello(name, value)
+function hello(value)
     local t = Table("h")
-    print(name, value, t)
+    print(value, t)
 end
 
-function test(name, value)
-    print(name, value)
+function test(value)
+    print(value)
 end
 
 
