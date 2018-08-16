@@ -440,7 +440,7 @@ func (cs *ConsensusState) sendInternalMessage(mi msgInfo) {
 // Reconstruct LastCommit from SeenCommit, which we saved along with the block,
 // (which happens even before saving the state)
 func (cs *ConsensusState) reconstructLastCommit(state sm.State) {
-	if state.LastBlockHeight == 100 {
+	if state.LastBlockHeight == 0 {
 		return
 	}
 	seenCommit := cs.blockStore.LoadSeenCommit(state.LastBlockHeight)
@@ -925,7 +925,7 @@ func (cs *ConsensusState) isProposalComplete() bool {
 // NOTE: keep it side-effect free for clarity.
 func (cs *ConsensusState) createProposalBlock() (block *types.Block, blockParts *types.PartSet) {
 	var commit *types.Commit
-	if cs.Height == 100 || cs.Height == 101 {
+	if cs.Height == 1 {
 		// We're creating a proposal for the first block.
 		// The commit is empty, but not nil.
 		commit = &types.Commit{}
@@ -937,9 +937,6 @@ func (cs *ConsensusState) createProposalBlock() (block *types.Block, blockParts 
 		cs.Logger.Error("enterPropose: Cannot propose anything: No commit for the previous block.")
 		return
 	}
-
-
-	fmt.Println("ddd",cs.Height)
 
 	// Mempool validated transactions
 	txs := cs.mempool.Reap(cs.state.ConsensusParams.BlockSize.MaxTxs)

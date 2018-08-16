@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/tendermint/go-amino"
+	amino "github.com/tendermint/go-amino"
 
 	cmn "github.com/tendermint/tendermint/libs/common"
 	"github.com/tendermint/tendermint/libs/log"
@@ -81,11 +81,6 @@ func NewBlockchainReactor(state sm.State, blockExec *sm.BlockExecutor, store *Bl
 
 	const capacity = 1000                      // must be bigger than peers count
 	errorsCh := make(chan peerError, capacity) // so we don't block in #Receive#pool.AddBlock
-
-	if store.Height() == 0 {
-		//store.height=99
-		//state.LastBlockHeight = 99
-	}
 
 	pool := NewBlockPool(
 		store.Height()+1,

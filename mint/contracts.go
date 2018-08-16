@@ -9,7 +9,6 @@ import (
 	"github.com/kooksee/usmint/mint/luas"
 	"time"
 	"github.com/kooksee/usmint/kts/consts"
-	"github.com/ethereum/go-ethereum/common"
 )
 
 func newContractManager() *ContractManager {
@@ -30,15 +29,23 @@ func (c *ContractManager) getContract(addr []byte) *lua.LState {
 	}
 
 	// 得到合约地址
-	d, err := c.db.Get(addr)
-	cmn.MustNotErr("ContractManager getContract", err)
+	d, err := c.db.Get(append(addr, "code"...))
+	cmn.MustNotErr("ContractManager getContract 1", err)
 
 	l := lua.NewState()
+	cmn.MustNotErr("ContractManager getContract 2", l.DoString(string(d)))
+
+	di, err := c.db.Get(append(addr, "init"...))
+	cmn.MustNotErr("ContractManager getContract 3", err)
+
+	lv, err := luas.DecodeRaw(l, di)
+	cmn.MustNotErr("ContractManager getContract 4", err)
+
+	// 加载init
+	l.SetGlobal("init", lv)
 
 	// 加载lua lib
 	c.loadLib(l)
-
-	cmn.MustNotErr("lua lib exec error", l.DoString(string(d)))
 
 	c.c.SetDefault(string(addr), l)
 	return l
@@ -56,7 +63,7 @@ func (c *ContractManager) loadLib(l *lua.LState) {
 }
 
 // Deploy 部署合约
-func (c *ContractManager) Deploy(address common.Address, data string) error {
+func (c *ContractManager) Deploy(address []byte, data string) error {
 
 	l := lua.NewState()
 	defer l.Close()
@@ -71,7 +78,7 @@ func (c *ContractManager) Deploy(address common.Address, data string) error {
 	}
 
 	// 保存合约
-	if err := c.db.Set([]byte(address.Hex()+"code"), []byte(data)); err != nil {
+	if err := c.db.Set(append(address, "code"...), []byte(data)); err != nil {
 		return cmn.ErrPipe("ContractManager DeployCheck 3", err)
 	}
 
@@ -81,11 +88,22 @@ func (c *ContractManager) Deploy(address common.Address, data string) error {
 		return cmn.ErrPipe("ContractManager DeployCheck 4", err)
 	}
 
-	return cmn.ErrPipe("ContractManager DeployCheck 5", c.db.Set([]byte(address.Hex()+"init"), dt))
+	return cmn.ErrPipe("ContractManager DeployCheck 5", c.db.Set(append(address, "init"...), dt))
 }
 
 // DeployCheck 合约部署检查
-func (c *ContractManager) DeployCheck(data string) error {
+func (c *ContractManager) DeployCheck(addr []byte, data string) error {
+	// 检查合约地址是否存在
+
+	ok, err := c.db.Exist(addr)
+	if err != nil {
+		return cmn.ErrPipe("ContractManager DeployCheck", err)
+	}
+
+	if ok {
+		return cmn.Err("ContractManager DeployCheck: the contract %s had exist", addr)
+	}
+
 	l := lua.NewState()
 	defer l.Close()
 
@@ -97,9 +115,17 @@ func (c *ContractManager) DeployCheck(data string) error {
 		return cmn.Err("ContractManager DeployCheck: the init variable must be table type")
 	}
 
-	// 加载依赖
-	c.loadLib(l)
 	return nil
+}
+
+func (c *ContractManager) CallWithRetCheck(cAddr []byte, method string, args []byte) error {
+	if method == "init" {
+		return cmn.Err("ContractManager CallWithRetCheck: the method %s is keyword", method)
+	}
+
+	l := c.getContract(cAddr)
+	_, err := luas.DecodeRaw(l, args)
+	return cmn.ErrPipe("ContractManager CallWithRetCheck", err)
 }
 
 func (c *ContractManager) CallWithRet(cAddr []byte, method string, args []byte) ([]byte, error) {
