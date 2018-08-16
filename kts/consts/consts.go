@@ -11,9 +11,10 @@ const (
 	License  = "license"
 
 	// prefix
-	DbPrefix        = "db:"
-	AccountPrefix   = "act:"
-	ValidatorPrefix = "val:"
+	DbPrefix            = "db:"
+	AccountPrefix       = "act:"
+	SmartContractPrefix = "sc:"
+	ValidatorPrefix     = "val:"
 
 	TokenPrefix = "token:"
 

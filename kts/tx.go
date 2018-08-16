@@ -7,6 +7,8 @@ import (
 	"github.com/kooksee/usmint/cmn"
 	"encoding/hex"
 	"github.com/tendermint/tendermint/crypto/encoding/amino"
+	ecrypto "github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 func DecodeTx(bs []byte) (*Transaction, error) {
@@ -57,25 +59,45 @@ func (t *Transaction) GetPubkey() crypto.PubKey {
 	return t.pubkey
 }
 
-// VerifySign 签名验证
-func (t *Transaction) VerifySign() error {
+// VerifySign 验证数据签名
+func (t *Transaction) VerifySign() (addr common.Address, err error) {
+	sign, err := hex.DecodeString(t.Signature)
+	if err != nil {
+		return addr, cmn.ErrPipe("Transaction VerifyNodeSign 1", err)
+	}
+
+	data, err := hex.DecodeString(t.Data)
+	if err != nil {
+		return addr, cmn.ErrPipe("Transaction VerifyNodeSign 2", err)
+	}
+
+	pubk, err := ecrypto.SigToPub(data, sign)
+	if err != nil {
+		return addr, cmn.ErrPipe("Transaction VerifyNodeSign 3", err)
+	}
+
+	return ecrypto.PubkeyToAddress(*pubk), nil
+}
+
+// VerifyNodeSign 节点签名验证
+func (t *Transaction) VerifyNodeSign() error {
 	sign, err := hex.DecodeString(t.NodeSignature)
 	if err != nil {
-		return cmn.ErrPipe("Transaction VerifySign 1", err)
+		return cmn.ErrPipe("Transaction VerifyNodeSign 1", err)
 	}
 
 	pubkey, err := hex.DecodeString(t.Pubkey)
 	if err != nil {
-		return cmn.ErrPipe("Transaction VerifySign 2", err)
+		return cmn.ErrPipe("Transaction VerifyNodeSign 2", err)
 	}
 
 	pk, err := cryptoAmino.PubKeyFromBytes(pubkey)
 	if err != nil {
-		return cmn.ErrPipe("Transaction VerifySign PubKeyFromBytes", err)
+		return cmn.ErrPipe("Transaction VerifyNodeSign PubKeyFromBytes", err)
 	}
 
 	if !pk.VerifyBytes(t.SignMsg(), sign) {
-		return cmn.ErrPipe("Transaction VerifySign 4", errors.New("transaction verify false"))
+		return cmn.ErrPipe("Transaction VerifyNodeSign 4", errors.New("transaction verify false"))
 	}
 
 	t.pubkey = pk

@@ -4,11 +4,20 @@ import (
 	"github.com/yuin/gopher-lua"
 	"github.com/kooksee/kdb"
 	"github.com/layeh/gopher-luar"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/kooksee/usmint/cmn"
 	"github.com/patrickmn/go-cache"
 	"github.com/kooksee/usmint/mint/luas"
+	"time"
+	"github.com/kooksee/usmint/kts/consts"
+	"github.com/ethereum/go-ethereum/common"
 )
+
+func newContractManager() *ContractManager {
+	return &ContractManager{
+		c:  cache.New(time.Hour, time.Hour),
+		db: db.KHash([]byte(consts.SmartContractPrefix)),
+	}
+}
 
 type ContractManager struct {
 	c  *cache.Cache
@@ -22,9 +31,7 @@ func (c *ContractManager) getContract(addr []byte) *lua.LState {
 
 	// 得到合约地址
 	d, err := c.db.Get(addr)
-	if err != nil {
-		panic(err.Error())
-	}
+	cmn.MustNotErr("ContractManager getContract", err)
 
 	l := lua.NewState()
 
@@ -48,23 +55,50 @@ func (c *ContractManager) loadLib(l *lua.LState) {
 
 }
 
-func (c *ContractManager) Deploy() error {
+// Deploy 部署合约
+func (c *ContractManager) Deploy(address common.Address, data string) error {
 
 	l := lua.NewState()
 	defer l.Close()
 
-	if err := l.DoString(""); err != nil {
-		return err
+	if err := l.DoString(data); err != nil {
+		return cmn.ErrPipe("ContractManager Deploy 1", err)
 	}
 
-	err := l.CallByParam(lua.P{
-		Fn:      l.GetGlobal("init"),
-		NRet:    0,
-		Protect: true}, lua.LString(""))
+	t, ok := l.GetGlobal("init").(*lua.LTable);
+	if !ok {
+		return cmn.Err("ContractManager DeployCheck 2: the init variable must be table type")
+	}
+
+	// 保存合约
+	if err := c.db.Set([]byte(address.Hex()+"code"), []byte(data)); err != nil {
+		return cmn.ErrPipe("ContractManager DeployCheck 3", err)
+	}
+
+	// 保存合约的init
+	dt, err := luas.LValueDumps(t)
 	if err != nil {
-		return err
+		return cmn.ErrPipe("ContractManager DeployCheck 4", err)
 	}
 
+	return cmn.ErrPipe("ContractManager DeployCheck 5", c.db.Set([]byte(address.Hex()+"init"), dt))
+}
+
+// DeployCheck 合约部署检查
+func (c *ContractManager) DeployCheck(data string) error {
+	l := lua.NewState()
+	defer l.Close()
+
+	if err := l.DoString(data); err != nil {
+		return cmn.ErrPipe("ContractManager DeployCheck", err)
+	}
+
+	if _, ok := l.GetGlobal("init").(*lua.LTable); !ok {
+		return cmn.Err("ContractManager DeployCheck: the init variable must be table type")
+	}
+
+	// 加载依赖
+	c.loadLib(l)
 	return nil
 }
 
@@ -86,19 +120,4 @@ func (c *ContractManager) CallWithRet(cAddr []byte, method string, args []byte) 
 	ret := l.Get(-1)
 	l.Pop(1)
 	return luas.LValueDumps(ret)
-}
-
-type Contract struct {
-	Address         []byte `json:"addr,omitempty"`
-	Method          string `json:"method,omitempty"`
-	Data            []byte `json:"data,omitempty"`
-	l               *lua.LState
-	debug           bool
-	ContractAddress []byte
-	Code            []byte
-	Tx              []byte
-}
-
-func (c *Contract) CreateContractAddress(tx []byte) []byte {
-	return crypto.Keccak256(tx, c.Code)
 }

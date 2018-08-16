@@ -16,6 +16,7 @@ func New() *Mint {
 		db:    db,
 		val:   NewValidatorManager(),
 		miner: NewMiner(),
+		sc:    newContractManager(),
 	}
 }
 
@@ -26,6 +27,7 @@ type Mint struct {
 	db         kdb.IKDB
 	val        *ValidatorManager
 	miner      *Miner
+	sc         *ContractManager
 }
 
 func (m *Mint) State() *State {
@@ -62,7 +64,7 @@ func (m *Mint) CheckTx(data []byte) types.ResponseCheckTx {
 	}
 
 	// 签名验证
-	if err := tx.VerifySign(); err != nil {
+	if err := tx.VerifyNodeSign(); err != nil {
 		return types.ResponseCheckTx{
 			Code: code.ErrInternal.Code,
 			Log:  cmn.ErrPipe("Mint CheckTx VerifySign Error", err).Error(),
@@ -88,6 +90,9 @@ func (m *Mint) CheckTx(data []byte) types.ResponseCheckTx {
 				Log:  err.Error(),
 			}
 		}
+
+	case "sc_dp":
+	case "sc_call":
 	}
 
 	return types.ResponseCheckTx{Code: code.Ok.Code}
