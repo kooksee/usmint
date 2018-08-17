@@ -11,18 +11,10 @@ var ErrPipe = cmn.Err.ErrWithMsg
 var ErrCurry = cmn.Err.Curry
 var F = cmn.F
 var Err = cmn.Err.Err
-var StrJoin = cmn.StrJoin
 
 var MustNotErr = cmn.Err.MustNotErr
 var JsonMarshal = cmn.Json.Marshal
 var JsonUnmarshal = cmn.Json.Unmarshal
-
-type M map[string]interface{}
-
-func (m M) String() string {
-	d, _ := JsonMarshal(m)
-	return string(d)
-}
 
 var logger log.Logger
 
@@ -56,7 +48,6 @@ func GetNode() *node.Node {
 	if n == nil {
 		panic("please init node")
 	}
-	n.MempoolReactor()
 	return n
 }
 
