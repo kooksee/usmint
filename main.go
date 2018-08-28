@@ -5,7 +5,6 @@ import (
 	"github.com/tendermint/tendermint/libs/cli"
 
 	"github.com/tendermint/tendermint/cmd/tendermint/commands"
-	"github.com/tendermint/tendermint/node"
 	"github.com/tendermint/tendermint/privval"
 	"github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/libs/log"
@@ -13,7 +12,30 @@ import (
 	"github.com/kooksee/usmint/app"
 	"github.com/kooksee/usmint/cmn"
 	"github.com/kooksee/usmint/cmd"
+	"github.com/kooksee/usmint/reactors"
+	"time"
+	"github.com/tendermint/tendermint/p2p"
+	"fmt"
+	"github.com/tendermint/tendermint/node"
+	"bytes"
 )
+
+func ff(s *p2p.Switch, kr *reactors.KReactor, logger log.Logger, node2 *node.Node) {
+	for {
+
+		if !bytes.Contains(node2.NodeInfo().Channels, []byte{0x60}) {
+			nf := node2.Switch().NodeInfo()
+			nf.Channels = append(nf.Channels, kr.ChId)
+			node2.Switch().SetNodeInfo(nf)
+		}
+
+		fmt.Println(node2.NodeInfo().Channels.Bytes())
+		fmt.Println(node2.Switch().NumPeers())
+		node2.Switch().Broadcast(kr.ChId, []byte("hello kr"))
+		logger.Error("test sent")
+		time.Sleep(time.Second * 2)
+	}
+}
 
 func DefaultNewNode(config *config.Config, logger log.Logger) (*node.Node, error) {
 	// init cmn
@@ -34,6 +56,12 @@ func DefaultNewNode(config *config.Config, logger log.Logger) (*node.Node, error
 	// 获得node
 	cmn.InitNode(n)
 
+	kr := reactors.NewKReactor()
+	kr.SetLogger(logger.With("module", "kr"))
+	n.Switch().AddReactor(kr.Name, kr)
+	fmt.Println(kr.ChId)
+
+	go ff(n.Switch(), kr, logger, n)
 	return n, err
 }
 
