@@ -1,21 +1,13 @@
 package mint
 
 import (
-	"github.com/tendermint/tendermint/libs/log"
-	"github.com/kooksee/kdb"
-	"github.com/kooksee/usmint/cmn"
-	"path/filepath"
-)
-
-var (
-	db     kdb.IKDB
-	logger log.Logger
+	"github.com/kooksee/usmint/mint/minter"
+	"github.com/kooksee/usmint/mint/state"
+	"github.com/kooksee/usmint/mint/validator"
 )
 
 func Init() {
-	cfg := kdb.DefaultConfig()
-	cfg.InitKdb(filepath.Join(cmn.GetCfg().DBDir(), "app_db"))
-	db = cfg.GetDb()
-
-	logger = cmn.Log().With("pkg", "mint")
+	validator.Init()
+	minter.Init()
+	state.Init()
 }

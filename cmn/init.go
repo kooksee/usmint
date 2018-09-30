@@ -4,7 +4,8 @@ import (
 	"github.com/kooksee/cmn"
 	"github.com/tendermint/tendermint/libs/log"
 	"github.com/tendermint/tendermint/config"
-	"github.com/tendermint/tendermint/node"
+	"github.com/kooksee/kdb"
+	"github.com/kooksee/usmint/node"
 )
 
 var ErrPipe = cmn.Err.ErrWithMsg
@@ -14,6 +15,7 @@ var Err = cmn.Err.Err
 
 var MustNotErr = cmn.Err.MustNotErr
 var JsonMarshal = cmn.Json.Marshal
+var JsonMarshalToString = cmn.Json.MarshalToString
 var JsonUnmarshal = cmn.Json.Unmarshal
 
 var logger log.Logger
@@ -33,6 +35,12 @@ var cfg *config.Config
 
 func InitCfg(cfg1 *config.Config) {
 	cfg = cfg1
+}
+
+func InitAppDb(path string) {
+	cfg := kdb.DefaultConfig()
+	cfg.DbPath = path
+	cfg.InitKdb()
 }
 
 func GetCfg() *config.Config {

@@ -1,106 +1,100 @@
 package kts
 
 import (
-	"fmt"
-	"errors"
-	"github.com/tendermint/tendermint/crypto"
 	"github.com/kooksee/usmint/cmn"
-	"encoding/hex"
-	"github.com/tendermint/tendermint/crypto/encoding/amino"
-	ecrypto "github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/common"
+	"math/big"
+	"github.com/tendermint/tendermint/abci/types"
+	"github.com/kooksee/usmint/wire"
+	"crypto/ecdsa"
 )
 
-func DecodeTx(bs []byte) (*Transaction, error) {
-	tx := NewTransaction()
-	return tx, cmn.ErrPipe("DecodeTx2", cmn.JsonUnmarshal(bs, tx))
+type DataHandler interface {
+	OnCheck(tx *Transaction, res *types.ResponseCheckTx)
+	OnDeliver(tx *Transaction, res *types.ResponseDeliverTx)
+	OnQuery(res *types.ResponseQuery)
 }
+
+type BaseDataHandler struct {
+	DataHandler
+}
+
+func (t *BaseDataHandler) OnCheck(tx *Transaction, res *types.ResponseCheckTx)     {}
+func (t *BaseDataHandler) OnDeliver(tx *Transaction, res *types.ResponseDeliverTx) {}
+func (t *BaseDataHandler) OnQuery(res *types.ResponseQuery)                        {}
 
 func NewTransaction() *Transaction {
 	return &Transaction{}
 }
 
 type Transaction struct {
-	Signature     string `json:"sign,omitempty"`
-	NodeSignature string `json:"node_sign,omitempty"`
-	Pubkey        string `json:"pubkey,omitempty"`
-	Data          string `json:"data,omitempty"`
-	Event         string `json:"event,omitempty"`
-	Timestamp     uint64 `json:"time,omitempty"`
-	pubkey        crypto.PubKey
+	Sign      []byte `json:"sign"`
+	NodeSign  []byte `json:"node_sign"`
+	Data      []byte `json:"data"`
+	Event     string `json:"event"`
+	Timestamp uint64 `json:"time"`
+	miner     common.Address
+	sender    common.Address
 }
 
-func (t *Transaction) Dumps() ([]byte, error) {
-	return cmn.JsonMarshal(t)
+func (t *Transaction) Decode(tx []byte) error {
+	return wire.GetCodec().UnmarshalBinaryBare(tx, t)
 }
 
-// FromBytes 解析Transaction
-func (t *Transaction) Decode(bs []byte) error {
-	return cmn.JsonUnmarshal(bs, t)
+func (t *Transaction) Encode() []byte {
+	dt, err := wire.GetCodec().MarshalBinaryBare(t)
+	cmn.MustNotErr("Transaction.Encode", err)
+	return dt
 }
 
-func (t *Transaction) SignMsg() []byte {
-	if t.Data == "" {
-		return nil
+func (t *Transaction) GetSender() common.Address {
+	return t.sender
+}
+
+func (t *Transaction) GetSigHash() []byte {
+	return crypto.Keccak256(t.Data, big.NewInt(int64(t.Timestamp)).Bytes())
+}
+
+func (t *Transaction) GetMiner() common.Address {
+	return t.miner
+}
+
+func (t *Transaction) DoNodeSign(prv *ecdsa.PrivateKey) (err error) {
+	t.NodeSign, err = crypto.Sign(t.GetSigHash(), prv)
+	if err != nil {
+		cmn.MustNotErr("DoNodeSign", err)
 	}
-
-	if t.Event == "" {
-		return nil
-	}
-
-	if t.Timestamp == 0 {
-		return nil
-	}
-
-	return crypto.Sha256([]byte(fmt.Sprintf("%s%s%d", t.Data, t.Event, t.Timestamp)))
+	return
 }
 
-func (t *Transaction) GetPubkey() crypto.PubKey {
-	return t.pubkey
+func (t *Transaction) DoSenderSign(prv *ecdsa.PrivateKey) (err error) {
+	t.Sign, err = crypto.Sign(crypto.Keccak256(t.Data), prv)
+	if err != nil {
+		cmn.MustNotErr("DoNodeSign", err)
+	}
+	return
 }
 
 // VerifySign 验证数据签名
-func (t *Transaction) VerifySign() (addr common.Address, err error) {
-	sign, err := hex.DecodeString(t.Signature)
+func (t *Transaction) Verify() error {
+	puk1, err := crypto.SigToPub(t.GetSigHash(), t.NodeSign)
 	if err != nil {
-		return addr, cmn.ErrPipe("Transaction VerifyNodeSign 1", err)
+		return cmn.ErrPipe("Transaction VerifySign error with node", err)
 	}
+	t.miner = crypto.PubkeyToAddress(*puk1)
 
-	data, err := hex.DecodeString(t.Data)
+	puk, err := crypto.SigToPub(crypto.Keccak256(t.Data), t.Sign)
 	if err != nil {
-		return addr, cmn.ErrPipe("Transaction VerifyNodeSign 2", err)
+		return cmn.ErrPipe("Transaction VerifySign error with data", err)
 	}
-
-	pubk, err := ecrypto.SigToPub(data, sign)
-	if err != nil {
-		return addr, cmn.ErrPipe("Transaction VerifyNodeSign 3", err)
-	}
-
-	return ecrypto.PubkeyToAddress(*pubk), nil
-}
-
-// VerifyNodeSign 节点签名验证
-func (t *Transaction) VerifyNodeSign() error {
-	sign, err := hex.DecodeString(t.NodeSignature)
-	if err != nil {
-		return cmn.ErrPipe("Transaction VerifyNodeSign 1", err)
-	}
-
-	pubkey, err := hex.DecodeString(t.Pubkey)
-	if err != nil {
-		return cmn.ErrPipe("Transaction VerifyNodeSign 2", err)
-	}
-
-	pk, err := cryptoAmino.PubKeyFromBytes(pubkey)
-	if err != nil {
-		return cmn.ErrPipe("Transaction VerifyNodeSign PubKeyFromBytes", err)
-	}
-
-	if !pk.VerifyBytes(t.SignMsg(), sign) {
-		return cmn.ErrPipe("Transaction VerifyNodeSign 4", errors.New("transaction verify false"))
-	}
-
-	t.pubkey = pk
+	t.sender = crypto.PubkeyToAddress(*puk)
 
 	return nil
+}
+
+func init() {
+	cc := wire.GetCodec()
+	cc.RegisterInterface((*DataHandler)(nil), nil)
+	cc.RegisterConcrete(&Transaction{}, "mint/tx", nil)
 }

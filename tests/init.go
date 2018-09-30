@@ -5,17 +5,14 @@ import (
 	"github.com/json-iterator/go"
 	"encoding/hex"
 	"crypto/ecdsa"
-	ethc "github.com/ethereum/go-ethereum/crypto"
 	"encoding/base64"
-	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/privval"
 	"fmt"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 var abciClient *client.HTTP
-var NodepriV crypto.PrivKey
 var clientPriV *ecdsa.PrivateKey
 
 var node1PriV = "3721cf4e988845ddc5b5bd9e942da684990070a6a87bdc3c6fc32d1d9c2267bf"
@@ -25,9 +22,11 @@ var otherClientAddress = "2ee06d8ec74bf935ece278644891dfbc997735c4"
 
 const ethPrivKey = "a168ea1e8ee6c5fb8c761369aa04d2c89a7cef40599596ef0f32909946e01a2f"
 
+
 func init() {
 	ddd, _ := hex.DecodeString(ethPrivKey)
-	clientPriV, _ = ethc.ToECDSA(ddd)
+	clientPriV, _ = crypto.ToECDSA(ddd)
+	//add := crypto.PubkeyToAddress(clientPriV.PublicKey)
 
 	//pvv, err := ethc.GenerateKey()
 	//fmt.Println(hex.EncodeToString(ethc.FromECDSA(pvv)))
@@ -36,8 +35,6 @@ func init() {
 	//fmt.Println(hex.EncodeToString(ethc.FromECDSA(pvv1)))
 
 	//fmt.Println(hex.EncodeToString(ethc.PubkeyToAddress(pvv.PublicKey).Bytes()))
-
-	NodepriV = privval.LoadOrGenFilePV("priv_validator.json").PrivKey
 
 	//abciClient = client.NewHTTP("http://localhost:46657", "")
 	abciClient = client.NewHTTP("http://localhost:26657", "")

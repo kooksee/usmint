@@ -8,7 +8,6 @@ import (
 	"github.com/tendermint/tendermint/privval"
 	"github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/libs/log"
-	"github.com/tendermint/tendermint/proxy"
 	"github.com/kooksee/usmint/app"
 	"github.com/kooksee/usmint/cmn"
 	"github.com/kooksee/usmint/cmd"
@@ -16,13 +15,16 @@ import (
 	"time"
 	"github.com/tendermint/tendermint/p2p"
 	"fmt"
-	"github.com/tendermint/tendermint/node"
 	"bytes"
+	"github.com/tendermint/tendermint/proxy"
+	"path/filepath"
+	"github.com/kooksee/usmint/node"
 )
 
 func ff(s *p2p.Switch, kr *reactors.KReactor, logger log.Logger, node2 *node.Node) {
 	for {
 
+		// 添加新的reactor到tendermint中
 		if !bytes.Contains(node2.NodeInfo().Channels, []byte{0x60}) {
 			nf := node2.Switch().NodeInfo()
 			nf.Channels = append(nf.Channels, kr.ChId)
@@ -44,6 +46,9 @@ func DefaultNewNode(config *config.Config, logger log.Logger) (*node.Node, error
 	// init config
 	cmn.InitCfg(config)
 
+	// 初始化db
+	cmn.InitAppDb(filepath.Join(config.DBDir(), "mint_app.db"))
+
 	n, err := node.NewNode(config,
 		privval.LoadOrGenFilePV(config.PrivValidatorFile()),
 		proxy.NewLocalClientCreator(app.New()),
@@ -56,12 +61,16 @@ func DefaultNewNode(config *config.Config, logger log.Logger) (*node.Node, error
 	// 获得node
 	cmn.InitNode(n)
 
+	n.Switch().SetIDFilter(func(id p2p.ID) error {
+		return nil
+	})
+
 	kr := reactors.NewKReactor()
 	kr.SetLogger(logger.With("module", "kr"))
 	n.Switch().AddReactor(kr.Name, kr)
 	fmt.Println(kr.ChId)
 
-	go ff(n.Switch(), kr, logger, n)
+	//go ff(n.Switch(), kr, logger, n)
 	return n, err
 }
 
@@ -86,7 +95,7 @@ func main() {
 	// Create & start node
 	rootCmd.AddCommand(commands.NewRunNodeCmd(DefaultNewNode))
 
-	if err := cli.PrepareBaseCmd(rootCmd, "K", os.ExpandEnv("$PWD/kdata")).Execute(); err != nil {
+	if err := cli.PrepareBaseCmd(rootCmd, "Mint", os.ExpandEnv("$PWD/kdata")).Execute(); err != nil {
 		panic(err)
 	}
 }

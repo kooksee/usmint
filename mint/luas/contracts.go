@@ -1,4 +1,4 @@
-package mint
+package luas
 
 import (
 	"github.com/yuin/gopher-lua"
@@ -6,10 +6,10 @@ import (
 	"github.com/layeh/gopher-luar"
 	"github.com/kooksee/usmint/cmn"
 	"github.com/patrickmn/go-cache"
-	"github.com/kooksee/usmint/mint/luas"
 	"time"
 	"github.com/kooksee/usmint/kts/consts"
 	"github.com/kooksee/usmint/kts"
+	"github.com/kooksee/mintdb/mint/luas"
 )
 
 func newContractManager() *ContractManager {
