@@ -11,26 +11,11 @@ import (
 	tt "github.com/tendermint/tendermint/types"
 	"fmt"
 	"github.com/kooksee/usmint/kts"
-	"github.com/kooksee/usmint/wire"
 	"encoding/hex"
 	"github.com/kooksee/usmint/mint/validator"
 	"github.com/kooksee/usmint/mint/state"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/kooksee/usmint/mint/minter"
 )
-
-func checkMsgSize(txBytes []byte) error {
-	if len(txBytes) > maxMsgSize {
-		return fmt.Errorf("msg size exceeds max size (%d > %d)", len(txBytes), maxMsgSize)
-	}
-	return nil
-}
-
-var maxMsgSize = 1024 * 1024
-
-func decodeMsg(bz []byte) (msg kts.DataHandler, err error) {
-	return msg, wire.GetCodec().UnmarshalBinaryBare(bz, &msg)
-}
 
 type KApp struct {
 	types.BaseApplication
@@ -67,7 +52,7 @@ func (app *KApp) SetOption(req types.RequestSetOption) types.ResponseSetOption {
 // 实现abci的DeliverTx协议
 func (app *KApp) DeliverTx(txBytes []byte) (res types.ResponseDeliverTx) {
 	tx := kts.NewTransaction()
-	if err := wire.GetCodec().UnmarshalBinaryBare(txBytes, tx); err != nil {
+	if err := tx.Decode(txBytes); err != nil {
 		res.Code = 1
 		res.Log = fmt.Sprintf("tx decode error(%s)", err.Error())
 		return
@@ -76,10 +61,14 @@ func (app *KApp) DeliverTx(txBytes []byte) (res types.ResponseDeliverTx) {
 	if tx.Event == "valUpdate" {
 		val := &types.Validator{}
 		if err := val.Unmarshal(tx.Data); err != nil {
+			res.Code = 1
+			res.Log = fmt.Sprintf("tx decode error(%s)", err.Error())
 			return
 		}
 
 		if int(val.Power) > 9 {
+			res.Code = 1
+			res.Log = fmt.Sprintf("tx decode error")
 			return
 		}
 
@@ -87,7 +76,7 @@ func (app *KApp) DeliverTx(txBytes []byte) (res types.ResponseDeliverTx) {
 		app.valUpdates = append(app.valUpdates, *val)
 	}
 
-	msg, err := decodeMsg(tx.Data)
+	msg, err := kts.DecodeMsg(tx.Data)
 	if err != nil {
 		res.Code = 1
 		res.Log = cmn.ErrPipe("Mint DeliverTx decodeMsg Error", err).Error()
@@ -95,14 +84,14 @@ func (app *KApp) DeliverTx(txBytes []byte) (res types.ResponseDeliverTx) {
 	}
 
 	msg.OnDeliver(tx, &res)
-	state.GetState().AppHash = crypto.Keccak256(state.GetState().AppHash, txBytes)
+	state.GetState().AppHash = cmn.Ripemd160(append(state.GetState().AppHash, txBytes...))
 	return
 }
 
 // 实现abci的CheckTx协议
 func (app *KApp) CheckTx(txBytes []byte) (res types.ResponseCheckTx) {
 	// 检查tx大小
-	if err := checkMsgSize(txBytes); err != nil {
+	if err := cmn.CheckMsgSize(txBytes); err != nil {
 		res.Code = 1
 		res.Log = err.Error()
 		return
@@ -111,7 +100,7 @@ func (app *KApp) CheckTx(txBytes []byte) (res types.ResponseCheckTx) {
 	// 检查tx是否已经存在
 	txHash := tt.Tx(txBytes).Hash()
 	tx, _ := cmn.GetNode().Indexer().Get(txHash)
-	if tx != nil {
+	if tx != nil && tx.Height != 0 && tx.Result.Code != 0 {
 		res.Code = 1
 		res.Log = fmt.Sprintf("the hash(%s) had existed", hex.EncodeToString(txHash))
 		return
@@ -119,7 +108,7 @@ func (app *KApp) CheckTx(txBytes []byte) (res types.ResponseCheckTx) {
 
 	// decode tx
 	tx1 := kts.NewTransaction()
-	if err := wire.GetCodec().UnmarshalBinaryBare(txBytes, tx1); err != nil {
+	if err := tx1.Decode(txBytes); err != nil {
 		res.Code = 1
 		res.Log = fmt.Sprintf("tx decode error(%s)", err.Error())
 		return
@@ -140,7 +129,7 @@ func (app *KApp) CheckTx(txBytes []byte) (res types.ResponseCheckTx) {
 	}
 
 	// decode abci
-	msg, err := decodeMsg(tx1.Data)
+	msg, err := kts.DecodeMsg(tx1.Data)
 	if err != nil {
 		res.Code = 1
 		res.Log = cmn.ErrPipe("Mint CheckTx decodeMsg Error", err).Error()
@@ -158,13 +147,13 @@ func (app *KApp) Commit() types.ResponseCommit {
 
 func (app *KApp) Query(reqQuery types.RequestQuery) (res types.ResponseQuery) {
 	// 检查tx大小
-	if err := checkMsgSize(reqQuery.Data); err != nil {
+	if err := cmn.CheckMsgSize(reqQuery.Data); err != nil {
 		res.Code = 1
 		res.Log = err.Error()
 		return
 	}
 
-	msg, err := decodeMsg(reqQuery.Data)
+	msg, err := kts.DecodeMsg(reqQuery.Data)
 	if err != nil {
 		res.Code = 1
 		res.Log = cmn.ErrPipe("Mint CheckTx VerifySign Error", err).Error()

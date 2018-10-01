@@ -19,7 +19,6 @@ import (
 	"encoding/base64"
 	"github.com/kooksee/usmint/kts"
 	"github.com/kooksee/usmint/mint/minter"
-	"github.com/kooksee/usmint/wire"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/tendermint/tendermint/types"
 )
@@ -154,27 +153,29 @@ func TestAddMiner(t *testing.T) {
 }
 
 func TestName11(t *testing.T) {
-	tx := kts.NewTransaction()
-	tx.Data = wire.GetCodec().MustMarshalBinaryBare(&minter.SetMiner{
-		Addr:  common.HexToAddress("0x2BFb20449ab700f477B3D1903D3d92DeE6518b2B"),
-		Power: 10,
-	})
+	for a := 100; a > 0; a-- {
+		tx := kts.NewTransaction()
+		tx.Data = (&minter.SetMiner{
+			Addr:  common.HexToAddress("0x2BFb20449ab700f477B3D1903D3d92DeE6518b2B"),
+			Power: 10,
+		}).Encode()
 
-	dd, err := hex.DecodeString(node1PriV)
-	if err != nil {
-		panic(err.Error())
+		dd, err := hex.DecodeString(node1PriV)
+		if err != nil {
+			panic(err.Error())
+		}
+
+		p1, err := crypto.ToECDSA(dd)
+		if err != nil {
+			panic(err.Error())
+		}
+		tx.DoNodeSign(p1)
+		tx.DoSenderSign(p1)
+		res, err := abciClient.BroadcastTxAsync(types.Tx(tx.Encode()))
+		if err != nil {
+			panic(err.Error())
+		}
+		jsonPrintln(res)
 	}
 
-	p1, err := crypto.ToECDSA(dd)
-	if err != nil {
-		panic(err.Error())
-	}
-	tx.DoNodeSign(p1)
-	tx.DoSenderSign(p1)
-
-	res, err := abciClient.BroadcastTxCommit(types.Tx(tx.Encode()))
-	if err != nil {
-		panic(err.Error())
-	}
-	jsonPrintln(res)
 }

@@ -8,7 +8,12 @@ import (
 	"github.com/tendermint/tendermint/abci/types"
 	"github.com/kooksee/usmint/wire"
 	"crypto/ecdsa"
+	"time"
 )
+
+func DecodeMsg(bz []byte) (msg DataHandler, err error) {
+	return msg, wire.GetCodec().UnmarshalBinaryBare(bz, &msg)
+}
 
 type DataHandler interface {
 	OnCheck(tx *Transaction, res *types.ResponseCheckTx)
@@ -25,7 +30,7 @@ func (t *BaseDataHandler) OnDeliver(tx *Transaction, res *types.ResponseDeliverT
 func (t *BaseDataHandler) OnQuery(res *types.ResponseQuery)                        {}
 
 func NewTransaction() *Transaction {
-	return &Transaction{}
+	return &Transaction{Timestamp: uint64(time.Now().UnixNano() / 100000)}
 }
 
 type Transaction struct {

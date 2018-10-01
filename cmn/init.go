@@ -6,6 +6,8 @@ import (
 	"github.com/tendermint/tendermint/config"
 	"github.com/kooksee/kdb"
 	"github.com/kooksee/usmint/node"
+	"golang.org/x/crypto/ripemd160"
+	"fmt"
 )
 
 var ErrPipe = cmn.Err.ErrWithMsg
@@ -62,3 +64,18 @@ func GetNode() *node.Node {
 func InitNode(n1 *node.Node) {
 	n = n1
 }
+
+func Ripemd160(bytes []byte) []byte {
+	hasher := ripemd160.New()
+	hasher.Write(bytes)
+	return hasher.Sum(nil)
+}
+
+func CheckMsgSize(txBytes []byte) error {
+	if len(txBytes) > maxMsgSize {
+		return fmt.Errorf("msg size exceeds max size (%d > %d)", len(txBytes), maxMsgSize)
+	}
+	return nil
+}
+
+var maxMsgSize = 1024 * 1024

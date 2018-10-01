@@ -1,78 +1,106 @@
 package db
 
 import (
-	"bytes"
 	"github.com/tendermint/tendermint/libs/db"
-	"github.com/go-redis/redis"
+	"github.com/pingcap/tidb/kv"
+	"github.com/kooksee/usmint/cmn"
+	"github.com/pingcap/tidb/store/tikv"
+	"context"
+	"bytes"
+	"fmt"
 )
 
-type RedisDb struct {
+type TikvStore struct {
 	db.DB
-	name string
+	name []byte
 
-	data map[string][]byte
-	c    *redis.Client
+	c kv.Storage
 }
 
-func NewRedisDB(name, url string) (*RedisDb, error) {
-	opt, err := redis.ParseURL(url)
-	if err != nil {
-		return nil, err
+func NewTikvStore(name, url string) *TikvStore {
+	tikv.MaxConnectionCount = 128
+
+	// tikv://etcd-node1:port,etcd-node2:port?cluster=1&disableGC=false
+	store, err := tikv.Driver{}.Open(fmt.Sprintf("tikv://%s/pd?cluster=1&disableGC=false", url))
+	cmn.MustNotErr("NewTikvStore Error", err)
+	return &TikvStore{
+		name: []byte(name),
+		c:    store,
 	}
-	client := redis.NewClient(opt)
-	if err := client.Ping().Err(); err != nil {
-		return nil, err
+}
+
+func (db *TikvStore) withPrefix(key []byte) []byte {
+	return append(db.name, key...)
+}
+
+func (db *TikvStore) withTxn(fn func(txn kv.Transaction) error) {
+	txn, err := db.c.Begin()
+	cmn.MustNotErr("tikv store open tx error", err)
+	if err := fn(txn); err != nil && !kv.IsErrNotFound(fn(txn)) {
+		cmn.MustNotErr("tikv store exec tx error", err)
 	}
 
-	return &RedisDb{c: client, name: name, data: make(map[string][]byte)}, nil
+	cmn.MustNotErr("tikv store exec tx error", fn(txn))
+	defer txn.Rollback()
+	cmn.MustNotErr("tikv store commit tx error", txn.Commit(context.TODO()))
+}
+
+func (db *TikvStore) getSnapshot() kv.Snapshot {
+	ss, err := db.c.GetSnapshot(kv.MaxVersion)
+	cmn.MustNotErr("tikv store GetSnapshot error", err)
+	return ss
 }
 
 // Implements DB.
-func (db *RedisDb) Get(key []byte) []byte {
-	if dt, err := db.c.Get(string(key)).Bytes(); err != nil {
-		panic(err.Error())
-	} else {
-		db.data[string(key)] = dt
+func (db *TikvStore) Get(key []byte) []byte {
+	ret, err := db.getSnapshot().Get(db.withPrefix(key))
+	if !kv.IsErrNotFound(err) {
+		cmn.MustNotErr("tikv store Get error", err)
 	}
-	return db.data[string(key)]
+	return ret
 }
 
 // Implements DB.
-func (db *RedisDb) Has(key []byte) bool {
-	return db.Get(key) != nil
+func (db *TikvStore) Has(key []byte) bool {
+	ret, err := db.getSnapshot().Get(db.withPrefix(key))
+	return kv.IsErrNotFound(err) && len(ret) == 0
 }
 
 // Implements DB.
-func (db *RedisDb) Set(key []byte, value []byte) {
-	db.data[string(key)] = value
+func (db *TikvStore) Set(key []byte, value []byte) {
+	db.withTxn(func(txn kv.Transaction) (err error) {
+		return txn.Set(db.withPrefix(key), value)
+	})
 }
 
 // Implements DB.
-func (db *RedisDb) SetSync(key []byte, value []byte) {
-	db.data[string(key)] = value
+func (db *TikvStore) SetSync(key []byte, value []byte) {
+	db.Set(key, value)
 }
 
 // Implements DB.
-func (db *RedisDb) Delete(key []byte) {
-	db.data[string(key)] = nil
+func (db *TikvStore) Delete(key []byte) {
+	db.withTxn(func(txn kv.Transaction) (err error) {
+		return txn.Delete(db.withPrefix(key))
+	})
 }
 
 // Implements DB.
-func (db *RedisDb) DeleteSync(key []byte) {
-	db.data[string(key)] = nil
+func (db *TikvStore) DeleteSync(key []byte) {
+	db.Delete(key)
 }
 
 // Implements DB.
-func (db *RedisDb) Close() {
-	db.c.Close()
+func (db *TikvStore) Close() {
+	cmn.MustNotErr("TikvStore Close Error", db.c.Close())
 }
 
 // Implements DB.
-func (db *RedisDb) Print() {
+func (db *TikvStore) Print() {
 }
 
 // Implements DB.
-func (db *RedisDb) Stats() map[string]string {
+func (db *TikvStore) Stats() map[string]string {
 	//keys := []string{
 	//	"leveldb.num-files-at-level{n}",
 	//	"leveldb.stats",
@@ -91,35 +119,41 @@ func (db *RedisDb) Stats() map[string]string {
 // Batch
 
 // Implements DB.
-func (db *RedisDb) NewBatch() db.Batch {
-	return &goLevelDBBatch{db: db, data: make(map[string][]byte)}
+func (db *TikvStore) NewBatch() db.Batch {
+	return &tikvStoreBatch{data: make(map[string][]byte), db: db}
 }
 
-type goLevelDBBatch struct {
-	db   *RedisDb
+type tikvStoreBatch struct {
+	db   *TikvStore
 	data map[string][]byte
 }
 
 // Implements Batch.
-func (mBatch *goLevelDBBatch) Set(key, value []byte) {
-	mBatch.data[string(key)] = value
+func (m *tikvStoreBatch) Set(key, value []byte) {
+	m.data[string(key)] = value
 }
 
 // Implements Batch.
-func (mBatch *goLevelDBBatch) Delete(key []byte) {
-	delete(mBatch.data, string(key))
+func (m *tikvStoreBatch) Delete(key []byte) {
+	delete(m.data, string(key))
 }
 
 // Implements Batch.
-func (mBatch *goLevelDBBatch) Write() {
-	for k, v := range mBatch.data {
-		mBatch.db.Set([]byte(k), v)
-	}
+func (m *tikvStoreBatch) Write() {
+	m.db.withTxn(func(txn kv.Transaction) error {
+		for k, v := range m.data {
+			if err := txn.Set([]byte(k), v); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+
 }
 
 // Implements Batch.
-func (mBatch *goLevelDBBatch) WriteSync() {
-	mBatch.Write()
+func (m *tikvStoreBatch) WriteSync() {
+	m.Write()
 }
 
 //----------------------------------------
@@ -128,120 +162,79 @@ func (mBatch *goLevelDBBatch) WriteSync() {
 // Before creating a third version, refactor.
 
 // Implements DB.
-func (db *RedisDb) Iterator(start, end []byte) db.Iterator {
-	return newRedisDBIterator(db.c, start, end, false)
+func (db *TikvStore) Iterator(start, end []byte) db.Iterator {
+	it, err := db.getSnapshot().Seek(db.withPrefix(start))
+	cmn.MustNotErr("TikvStore Iterator Error", err)
+	return newTikvStoreIterator(db.name, false, it, start, end)
 }
 
 // Implements DB.
-func (db *RedisDb) ReverseIterator(start, end []byte) db.Iterator {
-	return newRedisDBIterator(db.c, start, end, true)
+func (db *TikvStore) ReverseIterator(start, end []byte) db.Iterator {
+	it, err := db.getSnapshot().SeekReverse(db.withPrefix(start))
+	cmn.MustNotErr("TikvStore ReverseIterator Error", err)
+	return newTikvStoreIterator(db.name, true, it, start, end)
 }
 
-type redisDBIterator struct {
+type tikvStoreIterator struct {
 	db.Iterator
 
-	r *redis.Client
-
-	start     []byte
-	end       []byte
-	isReverse bool
-	isInvalid bool
+	name    []byte
+	r       kv.Iterator
+	reverse bool
+	start   []byte
+	end     []byte
 }
 
-func newRedisDBIterator(r *redis.Client, start, end []byte, isReverse bool) *redisDBIterator {
-	return &redisDBIterator{
-		r:         r,
-		start:     start,
-		end:       end,
-		isReverse: isReverse,
-		isInvalid: false,
+func newTikvStoreIterator(name []byte, reverse bool, r kv.Iterator, start, end []byte) *tikvStoreIterator {
+	return &tikvStoreIterator{
+		name:    name,
+		r:       r,
+		reverse: reverse,
+		start:   start,
+		end:     end,
 	}
 }
 
 // Implements Iterator.
-func (itr *redisDBIterator) Domain() ([]byte, []byte) {
+func (itr *tikvStoreIterator) Domain() ([]byte, []byte) {
 	return itr.start, itr.end
 }
 
 // Implements Iterator.
-func (itr *redisDBIterator) Valid() bool {
-
-	// Once invalid, forever invalid.
-	if itr.isInvalid {
+func (itr *tikvStoreIterator) Valid() bool {
+	if !itr.r.Valid() {
 		return false
 	}
 
-	// Panic on DB error.  No way to recover.
-	itr.assertNoError()
-
-	// If source is invalid, invalid.
-	if !itr.source.Valid() {
-		itr.isInvalid = true
-		return false
-	}
-
-	// If key is end or past it, invalid.
-	var end = itr.end
-	var key = itr.source.Key()
-
-	if itr.isReverse {
-		if end != nil && bytes.Compare(key, end) <= 0 {
-			itr.isInvalid = true
+	if !itr.reverse {
+		if bytes.Compare(bytes.TrimPrefix(itr.r.Key(), itr.name), itr.end) > 0 {
 			return false
 		}
 	} else {
-		if end != nil && bytes.Compare(end, key) <= 0 {
-			itr.isInvalid = true
+		if bytes.Compare(bytes.TrimPrefix(itr.r.Key(), itr.name), itr.start) < 0 {
 			return false
 		}
 	}
 
-	// Valid
 	return true
 }
 
 // Implements Iterator.
-func (itr *redisDBIterator) Key() []byte {
-	// Key returns a copy of the current key.
-	// See https://github.com/syndtr/goleveldb/blob/52c212e6c196a1404ea59592d3f1c227c9f034b2/leveldb/iterator/iter.go#L88
-	itr.assertNoError()
-	itr.assertIsValid()
-	return cp(itr.source.Key())
+func (itr *tikvStoreIterator) Key() []byte {
+	return bytes.TrimPrefix(itr.r.Key(), itr.name)
 }
 
 // Implements Iterator.
-func (itr *redisDBIterator) Value() []byte {
-	// Value returns a copy of the current value.
-	// See https://github.com/syndtr/goleveldb/blob/52c212e6c196a1404ea59592d3f1c227c9f034b2/leveldb/iterator/iter.go#L88
-	itr.assertNoError()
-	itr.assertIsValid()
-	return cp(itr.source.Value())
+func (itr *tikvStoreIterator) Value() []byte {
+	return itr.r.Value()
 }
 
 // Implements Iterator.
-func (itr *redisDBIterator) Next() {
-	itr.assertNoError()
-	itr.assertIsValid()
-	if itr.isReverse {
-		itr.source.Prev()
-	} else {
-		itr.source.Next()
-	}
+func (itr *tikvStoreIterator) Next() {
+	cmn.MustNotErr("tikvStoreIterator next error", itr.r.Next())
 }
 
 // Implements Iterator.
-func (itr *redisDBIterator) Close() {
-	itr.source.Release()
-}
-
-func (itr *redisDBIterator) assertNoError() {
-	if err := itr.source.Error(); err != nil {
-		panic(err)
-	}
-}
-
-func (itr redisDBIterator) assertIsValid() {
-	if !itr.Valid() {
-		panic("goLevelDBIterator is invalid")
-	}
+func (itr *tikvStoreIterator) Close() {
+	itr.r.Close()
 }

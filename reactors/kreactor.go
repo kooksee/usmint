@@ -15,9 +15,9 @@ type RTx interface{}
 
 func RegisterRTx(cdc *amino.Codec) {
 	cdc.RegisterInterface((*RTx)(nil), nil)
-	cdc.RegisterConcrete(&sentTxReq{}, "tendermint/rtx/sentTxReq", nil)
-	cdc.RegisterConcrete(&getTxReq{}, "tendermint/rtx/getTxReq", nil)
-	cdc.RegisterConcrete(&getTxResp{}, "tendermint/rtx/getTxResp", nil)
+	cdc.RegisterConcrete(&sentTxReq{}, "mint/rtx/sentTxReq", nil)
+	cdc.RegisterConcrete(&getTxReq{}, "mint/rtx/getTxReq", nil)
+	cdc.RegisterConcrete(&getTxResp{}, "mint/rtx/getTxResp", nil)
 }
 
 type sentTxReq struct {
@@ -32,11 +32,6 @@ type getTxReq struct {
 type getTxResp struct {
 	Hash []byte
 	Data []byte
-}
-
-func decodeMsg(bz []byte) (msg RTx, err error) {
-	err = cdc.UnmarshalBinaryBare(bz, &msg)
-	return
 }
 
 // todo: p2p网络分发
@@ -77,6 +72,7 @@ func (k *KReactor) GetChannels() []*p2p.ChannelDescriptor {
 }
 
 func (k *KReactor) Receive(chID byte, src p2p.Peer, msgBytes []byte) {
+	k.Logger.Error(string(msgBytes))
 	msg, err := decodeMsg(msgBytes)
 	if err != nil {
 		k.Logger.Error("Error decoding message", "src", src, "chId", chID, "msg", msg, "err", err, "bytes", msgBytes)

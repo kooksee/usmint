@@ -7,6 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"fmt"
 	"math/big"
+	"github.com/kooksee/usmint/wire"
 )
 
 type Miner struct {
@@ -44,6 +45,14 @@ type SetMiner struct {
 	Power int64
 }
 
+func (t *SetMiner) Encode() []byte {
+	return wire.GetCodec().MustMarshalBinaryBare(t)
+}
+
+func (t *SetMiner) Decode(dt []byte) {
+	wire.GetCodec().MustUnmarshalBinaryBare(dt, t)
+}
+
 func (t *SetMiner) OnCheck(tx *kts.Transaction, res *types.ResponseCheckTx) {
 	if !IsMaster(tx.GetMiner()) {
 		res.Code = 1
@@ -56,7 +65,6 @@ func (t *SetMiner) OnCheck(tx *kts.Transaction, res *types.ResponseCheckTx) {
 		res.Log = fmt.Sprintf("the miner power must less than 10 (%d)", t.Power)
 		return
 	}
-
 }
 
 func (t *SetMiner) OnDeliver(tx *kts.Transaction, res *types.ResponseDeliverTx) {
@@ -86,4 +94,12 @@ func (t *DeleteMiner) OnDeliver(tx *kts.Transaction, res *types.ResponseDeliverT
 		res.Code = 1
 		res.Log = err.Error()
 	}
+}
+
+func (t *DeleteMiner) Encode() []byte {
+	return wire.GetCodec().MustMarshalBinaryBare(t)
+}
+
+func (t *DeleteMiner) Decode(dt []byte) {
+	wire.GetCodec().MustUnmarshalBinaryBare(dt, t)
 }

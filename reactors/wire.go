@@ -1,13 +1,13 @@
 package reactors
 
 import (
-	"github.com/tendermint/go-amino"
-	"github.com/tendermint/tendermint/types"
+	"github.com/kooksee/usmint/wire"
 )
 
-var cdc = amino.NewCodec()
-
 func init() {
-	RegisterRTx(cdc)
-	types.RegisterBlockAmino(cdc)
+	RegisterRTx(wire.GetCodec())
+}
+
+func decodeMsg(bz []byte) (msg interface{}, err error) {
+	return msg, wire.GetCodec().UnmarshalBinaryBare(bz, &msg)
 }

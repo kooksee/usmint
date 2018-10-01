@@ -14,7 +14,6 @@ import (
 	"github.com/kooksee/usmint/reactors"
 	"time"
 	"github.com/tendermint/tendermint/p2p"
-	"fmt"
 	"bytes"
 	"github.com/tendermint/tendermint/proxy"
 	"path/filepath"
@@ -23,7 +22,6 @@ import (
 
 func ff(s *p2p.Switch, kr *reactors.KReactor, logger log.Logger, node2 *node.Node) {
 	for {
-
 		// 添加新的reactor到tendermint中
 		if !bytes.Contains(node2.NodeInfo().Channels, []byte{0x60}) {
 			nf := node2.Switch().NodeInfo()
@@ -31,8 +29,8 @@ func ff(s *p2p.Switch, kr *reactors.KReactor, logger log.Logger, node2 *node.Nod
 			node2.Switch().SetNodeInfo(nf)
 		}
 
-		fmt.Println(node2.NodeInfo().Channels.Bytes())
-		fmt.Println(node2.Switch().NumPeers())
+		//fmt.Println(node2.NodeInfo().Channels.Bytes())
+		//fmt.Println(node2.Switch().NumPeers())
 		node2.Switch().Broadcast(kr.ChId, []byte("hello kr"))
 		logger.Error("test sent")
 		time.Sleep(time.Second * 2)
@@ -68,9 +66,8 @@ func DefaultNewNode(config *config.Config, logger log.Logger) (*node.Node, error
 	kr := reactors.NewKReactor()
 	kr.SetLogger(logger.With("module", "kr"))
 	n.Switch().AddReactor(kr.Name, kr)
-	fmt.Println(kr.ChId)
 
-	//go ff(n.Switch(), kr, logger, n)
+	go ff(n.Switch(), kr, logger, n)
 	return n, err
 }
 
