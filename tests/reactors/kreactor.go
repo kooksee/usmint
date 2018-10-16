@@ -127,3 +127,32 @@ func (k *KReactor) Exist(txid []byte) bool {
 	b, _ := k.db.Exist(txid)
 	return b
 }
+
+/*
+func ff(s *p2p.Switch, kr *reactors.KReactor, logger log.Logger, node2 *node.Node) {
+	for {
+		// 添加新的reactor到tendermint中
+		if !bytes.Contains(node2.NodeInfo().Channels, []byte{0x60}) {
+			nf := node2.Switch().NodeInfo()
+			nf.Channels = append(nf.Channels, kr.ChId)
+			node2.Switch().SetNodeInfo(nf)
+		}
+
+		//fmt.Println(node2.NodeInfo().Channels.Bytes())
+		//fmt.Println(node2.Switch().NumPeers())
+		node2.Switch().Broadcast(kr.ChId, []byte("hello kr"))
+		logger.Error("test sent")
+		time.Sleep(time.Second * 2)
+	}
+}
+
+n.Switch().SetIDFilter(func(id p2p.ID) error {
+		return nil
+	})
+
+	//kr := reactors.NewKReactor()
+	//kr.SetLogger(logger.With("module", "kr"))
+	//n.Switch().AddReactor(kr.Name, kr)
+	//
+	//go ff(n.Switch(), kr, logger, n)
+ */

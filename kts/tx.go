@@ -6,9 +6,9 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"math/big"
 	"github.com/tendermint/tendermint/abci/types"
-	"github.com/kooksee/usmint/wire"
 	"crypto/ecdsa"
 	"time"
+	"github.com/kooksee/usmint/cmn/wire"
 )
 
 func DecodeMsg(bz []byte) (msg DataHandler, err error) {

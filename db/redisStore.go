@@ -20,6 +20,9 @@ type TikvStore struct {
 func NewTikvStore(name, url string) *TikvStore {
 	tikv.MaxConnectionCount = 128
 
+
+	//tikv.NewRawKVClient()
+
 	// tikv://etcd-node1:port,etcd-node2:port?cluster=1&disableGC=false
 	store, err := tikv.Driver{}.Open(fmt.Sprintf("tikv://%s/pd?cluster=1&disableGC=false", url))
 	cmn.MustNotErr("NewTikvStore Error", err)

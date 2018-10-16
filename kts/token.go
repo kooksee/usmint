@@ -4,9 +4,9 @@ import (
 	"math/big"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/kooksee/kdb"
-	"github.com/kooksee/usmint/kts/consts"
 	"github.com/kooksee/usmint/cmn"
 	"errors"
+	"github.com/kooksee/usmint/cmn/consts"
 )
 
 func NewToken(address common.Address, db kdb.IKDB) *Token {
