@@ -125,21 +125,21 @@ func GetKeyType(key []byte) uint8 {
 func EncodeStringKey(buf []byte, key []byte) []byte {
 	key = EncodeBytes(buf, key)
 	buf = append(buf, key...)
-	buf = append(buf, String)
+	//buf = append(buf, String)
 	return buf
 }
 
 func EncodeHashMetaKey(buf []byte, key []byte) []byte {
 	key = EncodeBytes(buf, key)
 	buf = append(buf, key...)
-	buf = append(buf, HashMeta)
+	//buf = append(buf, HashMeta)
 	return buf
 }
 
 func EncodeHashField(buf []byte, key []byte, field []byte) []byte {
 	key = EncodeBytes(buf, key)
 	buf = append(buf, key...)
-	buf = append(buf, HashField)
+	//buf = append(buf, HashField)
 	field = EncodeBytes(buf, field)
 	buf = append(buf, field...)
 	return buf
@@ -198,9 +198,6 @@ func SeekPrefix(txn kv.Transaction, key []byte) (kv.Iterator, error) {
 		it.Close()
 		return nil, nil
 	}
-
-
-
 
 	return it, nil
 }

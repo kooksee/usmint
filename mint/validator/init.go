@@ -1,17 +1,14 @@
 package validator
 
 import (
-	"github.com/tendermint/tendermint/libs/log"
 	"github.com/kooksee/kdb"
-	"github.com/kooksee/usmint/cmn"
+	"github.com/kooksee/usmint/cmn/consts"
 )
 
 var (
-	db     kdb.IKHash
-	logger log.Logger
+	db kdb.IKHash
 )
 
 func Init() {
-	db = kdb.DefaultConfig().GetDb().KHash([]byte("validator"))
-	logger = cmn.Log().With("pkg", "validator")
+	db = kdb.DefaultConfig().GetDb().KHash([]byte(consts.ValidatorPrefix))
 }

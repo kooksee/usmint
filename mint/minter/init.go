@@ -4,7 +4,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	"github.com/kooksee/kdb"
 	"github.com/kooksee/usmint/cmn"
-	"github.com/kooksee/usmint/wire"
+	"github.com/kooksee/usmint/cmn/wire"
 )
 
 var (
@@ -13,9 +13,8 @@ var (
 )
 
 func init() {
-	cc := wire.GetCodec()
-	cc.RegisterConcrete(&SetMiner{}, "mint/minter/set", nil)
-	cc.RegisterConcrete(&DeleteMiner{}, "mint/minter/delete", nil)
+	wire.Register("minter_set", &SetMiner{})
+	wire.Register("minter_del", &DeleteMiner{})
 }
 
 func Init() {

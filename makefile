@@ -10,11 +10,9 @@ BuildVersion = "`date +%FT%T%z`"
 GOBIN = $(shell pwd)
 
 ImagesPrefix = "registry.cn-hangzhou.aliyuncs.com/yuanben/"
-ImageName = "kchain"
-TestTag = ":test"
-ImageNameTest = "kchain:test"
-
-ImageCommitName = "kchain:$(Version)_$(GitCommit)"
+ImageName = "usmint"
+ImageTestName = "$(ImageName):test"
+ImageCommitName = "$(ImageName):$(GitCommit)"
 
 version:
 	@echo "项目版本处理"
@@ -23,7 +21,7 @@ version:
 	@echo "const BuildVersion = "\"$(BuildVersion)\" >> $(VersionFile)
 	@echo "const GitCommit = "\"$(GitCommit)\" >> $(VersionFile)
 
-build: version
+build:
 	@echo "开始编译"
 	GOBIN=$(GOBIN) go install main.go
 
@@ -33,7 +31,7 @@ build_linux: version
 
 docker_login:
 	@echo "登陆镜像仓库"
-	docker login -u baiyunhui@yuanben -p ybl12345 registry.cn-hangzhou.aliyuncs.com
+	sudo docker login -u baiyunhui@yuanben -p ybl12345 registry.cn-hangzhou.aliyuncs.com
 
 test_rm:
 	@echo "删除文件"
@@ -66,23 +64,32 @@ test_clear:
 docker_test:
 	@echo "kchain docker test"
 	@ls * | grep example_data || mkdir example_data
-	@docker run --rm -it -v `pwd`/example_data:/kdata -p 46656:46656 -p 46657:46657 kchain init
-	@docker run --rm -it -v `pwd`/example_data:/kdata -p 46656:46656 -p 46657:46657 kchain
+	sudo docker run --rm -it -v `pwd`/example_data:/kdata -p 46656:46656 -p 46657:46657 kchain init
+	sudo docker run --rm -it -v `pwd`/example_data:/kdata -p 46656:46656 -p 46657:46657 kchain
 
 rm_stop:
 	@echo "删除所有的的容器"
 	sudo docker rm -f $(sudo docker ps -qa)
 	sudo docker ps -a
 
+rm_none:
+	@echo "删除所为none的image"
+	sudo docker images  | grep none | awk '{print $3}' | xargs docker rmi
+
 docker_push_pro: docker_build
 	@echo "docker push pro"
-	docker push $(ImagesPrefix)$(ImageCommitName)
-	docker push $(ImagesPrefix)$(ImageName)
+	sudo docker tag $(ImageName) $(ImagesPrefix)$(ImageName)
+	sudo docker tag $(ImageName) $(ImagesPrefix)$(ImageCommitName)
+
+	sudo docker push $(ImagesPrefix)$(ImageCommitName)
+	sudo docker push $(ImagesPrefix)$(ImageName)
 
 docker_push_dev: docker_build
 	@echo "docker push test"
-	@docker push $(ImagesPrefix)$(ImageNameTest)
+	sudo docker tag {{.ImageName}} {{.ImagesPrefix}}{{.ImageTestName}}
+	sudo docker push $(ImagesPrefix)$(ImageTestName)
 
 docker_build: build_linux
 	@echo "构建docker镜像"
-	@docker build -t $(ImageName) .
+	sudo docker build -t $(ImageName) .
+

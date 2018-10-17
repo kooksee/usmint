@@ -13,7 +13,7 @@ import (
 var VersionCmd = &cobra.Command{
 	Use:     "version",
 	Aliases: []string{"v", "ver"},
-	Short:   "Show version info",
+	Short:   "Show Version Info",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("tendermint version", tv.Version)
 		fmt.Println("usmint version", version.Version)

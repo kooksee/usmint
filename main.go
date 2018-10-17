@@ -62,7 +62,7 @@ func main() {
 	// Create & start node
 	rootCmd.AddCommand(commands.NewRunNodeCmd(DefaultNewNode))
 
-	if err := cli.PrepareBaseCmd(rootCmd, "Mint", os.ExpandEnv("$PWD/kdata")).Execute(); err != nil {
+	if err := cli.PrepareBaseCmd(rootCmd, "MINT", os.ExpandEnv("$PWD/kdata")).Execute(); err != nil {
 		panic(err)
 	}
 }

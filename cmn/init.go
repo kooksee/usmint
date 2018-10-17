@@ -66,11 +66,12 @@ func InitNode(n1 *node.Node) {
 }
 
 func Ripemd160(bytes []byte) []byte {
-	hasher := ripemd160.New()
-	hasher.Write(bytes)
-	return hasher.Sum(nil)
+	h := ripemd160.New()
+	h.Write(bytes)
+	return h.Sum(nil)
 }
 
+var maxMsgSize = 1024 * 1024
 func CheckMsgSize(txBytes []byte) error {
 	if len(txBytes) > maxMsgSize {
 		return fmt.Errorf("msg size exceeds max size (%d > %d)", len(txBytes), maxMsgSize)
@@ -78,4 +79,4 @@ func CheckMsgSize(txBytes []byte) error {
 	return nil
 }
 
-var maxMsgSize = 1024 * 1024
+

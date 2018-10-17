@@ -1,18 +1,20 @@
 package state
 
 import (
-	"github.com/tendermint/tendermint/libs/log"
 	"github.com/kooksee/kdb"
-	"github.com/kooksee/usmint/cmn"
+	"github.com/kooksee/usmint/cmn/consts"
+	"github.com/kooksee/usmint/cmn/wire"
 )
 
 var (
-	db     kdb.IKHash
-	logger log.Logger
+	db kdb.IKHash
 )
 
 func Init() {
 	cfg := kdb.DefaultConfig()
-	db = cfg.GetDb().KHash([]byte("state"))
-	logger = cmn.Log().With("pkg", "state")
+	db = cfg.GetDb().KHash([]byte(consts.StatePrefix))
+}
+
+func init() {
+	wire.Register("state", &State{})
 }

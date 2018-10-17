@@ -45,16 +45,3 @@ func (v *Validator) Encode() ([]byte, error) {
 func (v *Validator) GetAddress() []byte {
 	return v.address
 }
-
-type IValidatorManager interface {
-	// 更新验证者
-	UpdateValidator(val *Validator) error
-
-	// 检查验证者
-	CheckValidator(val *Validator) error
-
-	DecodeValidator([]byte) (*Validator, error)
-
-	// 节点是否存在
-	Has(address crypto.Address) bool
-}

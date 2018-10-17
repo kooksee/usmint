@@ -8,19 +8,17 @@ import (
 	"github.com/kooksee/usmint/mint"
 	"github.com/kooksee/usmint/cmn"
 	"github.com/tendermint/tendermint/abci/types"
-	tt "github.com/tendermint/tendermint/types"
 	"fmt"
 	"github.com/kooksee/usmint/kts"
 	"encoding/hex"
-	"github.com/kooksee/usmint/mint/validator"
 	"github.com/kooksee/usmint/mint/state"
 	"github.com/kooksee/usmint/mint/minter"
+	"github.com/tendermint/tendermint/crypto/tmhash"
 )
 
 type KApp struct {
-	types.BaseApplication
-
 	valUpdates []types.Validator
+	types.BaseApplication
 }
 
 func New() *KApp {
@@ -36,10 +34,6 @@ func (app *KApp) Info(req types.RequestInfo) (res types.ResponseInfo) {
 	res.Version = req.Version
 	res.LastBlockHeight = state.GetState().Height
 	res.LastBlockAppHash = state.GetState().AppHash
-	//res.Data, _ = cmn.JsonMarshalToString(&map[string]interface{}{
-	//	"config":    cmn.GetCfg(),
-	//	"node_info": cmn.GetNode().NodeInfo(),
-	//})
 
 	return
 }
@@ -47,45 +41,6 @@ func (app *KApp) Info(req types.RequestInfo) (res types.ResponseInfo) {
 // 实现abci的SetOption协议
 func (app *KApp) SetOption(req types.RequestSetOption) types.ResponseSetOption {
 	return types.ResponseSetOption{Code: types.CodeTypeOK}
-}
-
-// 实现abci的DeliverTx协议
-func (app *KApp) DeliverTx(txBytes []byte) (res types.ResponseDeliverTx) {
-	tx := kts.NewTransaction()
-	if err := tx.Decode(txBytes); err != nil {
-		res.Code = 1
-		res.Log = fmt.Sprintf("tx decode error(%s)", err.Error())
-		return
-	}
-
-	if tx.Event == "valUpdate" {
-		val := &types.Validator{}
-		if err := val.Unmarshal(tx.Data); err != nil {
-			res.Code = 1
-			res.Log = fmt.Sprintf("tx decode error(%s)", err.Error())
-			return
-		}
-
-		if int(val.Power) > 9 {
-			res.Code = 1
-			res.Log = fmt.Sprintf("tx decode error")
-			return
-		}
-
-		validator.UpdateValidator(val)
-		app.valUpdates = append(app.valUpdates, *val)
-	}
-
-	msg, err := kts.DecodeMsg(tx.Data)
-	if err != nil {
-		res.Code = 1
-		res.Log = cmn.ErrPipe("Mint DeliverTx decodeMsg Error", err).Error()
-		return
-	}
-
-	msg.OnDeliver(tx, &res)
-	state.GetState().AppHash = cmn.Ripemd160(append(state.GetState().AppHash, txBytes...))
-	return
 }
 
 // 实现abci的CheckTx协议
@@ -98,11 +53,17 @@ func (app *KApp) CheckTx(txBytes []byte) (res types.ResponseCheckTx) {
 	}
 
 	// 检查tx是否已经存在
-	txHash := tt.Tx(txBytes).Hash()
-	tx, _ := cmn.GetNode().Indexer().Get(txHash)
+	txHash := tmhash.Sum(txBytes)
+	tx, err := cmn.GetNode().Indexer().Get(txHash)
+	if err != nil {
+		res.Code = 1
+		res.Log = err.Error()
+		return
+	}
+
 	if tx != nil && tx.Height != 0 && tx.Result.Code != 0 {
 		res.Code = 1
-		res.Log = fmt.Sprintf("the hash(%s) had existed", hex.EncodeToString(txHash))
+		res.Log = fmt.Sprintf("the tx hash(%s) had existed", hex.EncodeToString(txHash))
 		return
 	}
 
@@ -122,7 +83,7 @@ func (app *KApp) CheckTx(txBytes []byte) (res types.ResponseCheckTx) {
 	}
 
 	// check miner auth
-	if !minter.Exist(tx1.GetMiner()) {
+	if !minter.ExistMiner(tx1.GetMiner()) {
 		res.Code = 1
 		res.Log = fmt.Sprintf("the miner(%s) does not exist", tx1.GetMiner().Hash().String())
 		return
@@ -132,11 +93,29 @@ func (app *KApp) CheckTx(txBytes []byte) (res types.ResponseCheckTx) {
 	msg, err := kts.DecodeMsg(tx1.Data)
 	if err != nil {
 		res.Code = 1
-		res.Log = cmn.ErrPipe("Mint CheckTx decodeMsg Error", err).Error()
+		res.Log = fmt.Sprintf("Mint CheckTx decodeMsg Error(%s)", err.Error())
 		return
 	}
 
 	msg.OnCheck(tx1, &res)
+
+	return
+}
+
+// 实现abci的DeliverTx协议
+func (app *KApp) DeliverTx(txBytes []byte) (res types.ResponseDeliverTx) {
+	tx := kts.NewTransaction()
+	tx.Decode(txBytes)
+
+	msg, _ := kts.DecodeMsg(tx.Data)
+	msg.OnDeliver(tx, &res)
+
+	if res.Code == 0 {
+		if tx.Event == "validator" {
+			app.valUpdates = append(app.valUpdates, tx.Val)
+		}
+		state.GetState().AppHash = cmn.Ripemd160(append(state.GetState().AppHash, txBytes...))
+	}
 	return
 }
 
@@ -153,24 +132,19 @@ func (app *KApp) Query(reqQuery types.RequestQuery) (res types.ResponseQuery) {
 		return
 	}
 
-	msg, err := kts.DecodeMsg(reqQuery.Data)
+	msg, err := kts.DecodeQueryMsg(reqQuery.Data)
 	if err != nil {
 		res.Code = 1
-		res.Log = cmn.ErrPipe("Mint CheckTx VerifySign Error", err).Error()
+		res.Log = err.Error()
 		return
 	}
-
-	msg.OnQuery(&res)
+	msg.Do(&res)
 	return
 }
 
 // Save the validators in the merkle tree
 func (app *KApp) InitChain(req types.RequestInitChain) types.ResponseInitChain {
-	for _, val := range req.Validators {
-		validator.UpdateValidator(&val)
-	}
-
-	// 添加master
+	// 添加master miner address
 	minter.InitMaster()
 	return types.ResponseInitChain{}
 }

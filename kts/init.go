@@ -1,10 +1,9 @@
 package kts
 
-import "github.com/kooksee/usmint/cmn"
+import "github.com/kooksee/usmint/cmn/wire"
 
 type M map[string]interface{}
 
-func (m M) String() string {
-	d, _ := cmn.JsonMarshal(m)
-	return string(d)
+func init() {
+	wire.Register("m", &M{})
 }

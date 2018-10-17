@@ -11,14 +11,21 @@ import (
 	"github.com/kooksee/usmint/cmn/wire"
 )
 
-func DecodeMsg(bz []byte) (msg DataHandler, err error) {
-	return msg, wire.GetCodec().UnmarshalBinaryBare(bz, &msg)
+func DecodeQueryMsg(data []byte) (h QueryHandler, err error) {
+	return h, wire.Decode(data, h)
+}
+
+type QueryHandler interface {
+	Do(res *types.ResponseQuery)
+}
+
+func DecodeMsg(data []byte) (h DataHandler, err error) {
+	return h, wire.Decode(data, h)
 }
 
 type DataHandler interface {
 	OnCheck(tx *Transaction, res *types.ResponseCheckTx)
 	OnDeliver(tx *Transaction, res *types.ResponseDeliverTx)
-	OnQuery(res *types.ResponseQuery)
 }
 
 type BaseDataHandler struct {
@@ -27,30 +34,28 @@ type BaseDataHandler struct {
 
 func (t *BaseDataHandler) OnCheck(tx *Transaction, res *types.ResponseCheckTx)     {}
 func (t *BaseDataHandler) OnDeliver(tx *Transaction, res *types.ResponseDeliverTx) {}
-func (t *BaseDataHandler) OnQuery(res *types.ResponseQuery)                        {}
 
 func NewTransaction() *Transaction {
-	return &Transaction{Timestamp: uint64(time.Now().UnixNano() / 100000)}
+	return &Transaction{Timestamp: uint64(time.Now().Unix())}
 }
 
 type Transaction struct {
-	Sign      []byte `json:"sign"`
-	NodeSign  []byte `json:"node_sign"`
-	Data      []byte `json:"data"`
-	Event     string `json:"event"`
-	Timestamp uint64 `json:"time"`
+	Sign      []byte          `json:"sign"`
+	NodeSign  []byte          `json:"node_sign"`
+	Data      []byte          `json:"data"`
+	Event     string          `json:"event"`
+	Timestamp uint64          `json:"time"`
 	miner     common.Address
 	sender    common.Address
+	Val       types.Validator `json:"-"`
 }
 
 func (t *Transaction) Decode(tx []byte) error {
-	return wire.GetCodec().UnmarshalBinaryBare(tx, t)
+	return wire.Decode(tx, t)
 }
 
 func (t *Transaction) Encode() []byte {
-	dt, err := wire.GetCodec().MarshalBinaryBare(t)
-	cmn.MustNotErr("Transaction.Encode", err)
-	return dt
+	return wire.Encode(t)
 }
 
 func (t *Transaction) GetSender() common.Address {
@@ -99,7 +104,7 @@ func (t *Transaction) Verify() error {
 }
 
 func init() {
-	cc := wire.GetCodec()
-	cc.RegisterInterface((*DataHandler)(nil), nil)
-	cc.RegisterConcrete(&Transaction{}, "mint/tx", nil)
+	wire.RegisterInterface((*DataHandler)(nil))
+	wire.Register("tx", &Transaction{})
+	wire.Register("baseHandler", &BaseDataHandler{})
 }

@@ -7,7 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"fmt"
 	"math/big"
-	"github.com/kooksee/usmint/wire"
+	"github.com/kooksee/usmint/cmn/wire"
 )
 
 type Miner struct {
@@ -15,7 +15,7 @@ type Miner struct {
 	Power int64
 }
 
-func Exist(addr common.Address) bool {
+func ExistMiner(addr common.Address) bool {
 	dt, err := db.Get(addr.Bytes())
 	if err != nil {
 		panic(err.Error())
@@ -46,11 +46,11 @@ type SetMiner struct {
 }
 
 func (t *SetMiner) Encode() []byte {
-	return wire.GetCodec().MustMarshalBinaryBare(t)
+	return wire.Encode(t)
 }
 
-func (t *SetMiner) Decode(dt []byte) {
-	wire.GetCodec().MustUnmarshalBinaryBare(dt, t)
+func (t *SetMiner) Decode(dt []byte) error {
+	return wire.Decode(dt, t)
 }
 
 func (t *SetMiner) OnCheck(tx *kts.Transaction, res *types.ResponseCheckTx) {
@@ -97,9 +97,9 @@ func (t *DeleteMiner) OnDeliver(tx *kts.Transaction, res *types.ResponseDeliverT
 }
 
 func (t *DeleteMiner) Encode() []byte {
-	return wire.GetCodec().MustMarshalBinaryBare(t)
+	return wire.Encode(t)
 }
 
-func (t *DeleteMiner) Decode(dt []byte) {
-	wire.GetCodec().MustUnmarshalBinaryBare(dt, t)
+func (t *DeleteMiner) Decode(dt []byte) error {
+	return wire.Decode(dt, t)
 }

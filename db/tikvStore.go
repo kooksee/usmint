@@ -20,7 +20,6 @@ type TikvStore struct {
 func NewTikvStore(name, url string) *TikvStore {
 	tikv.MaxConnectionCount = 128
 
-
 	//tikv.NewRawKVClient()
 
 	// tikv://etcd-node1:port,etcd-node2:port?cluster=1&disableGC=false
@@ -151,7 +150,6 @@ func (m *tikvStoreBatch) Write() {
 		}
 		return nil
 	})
-
 }
 
 // Implements Batch.
@@ -209,15 +207,15 @@ func (itr *tikvStoreIterator) Valid() bool {
 		return false
 	}
 
-	if !itr.reverse {
-		if bytes.Compare(bytes.TrimPrefix(itr.r.Key(), itr.name), itr.end) > 0 {
-			return false
-		}
-	} else {
-		if bytes.Compare(bytes.TrimPrefix(itr.r.Key(), itr.name), itr.start) < 0 {
-			return false
-		}
-	}
+	//if !itr.reverse {
+	//	if bytes.Compare(itr.name, itr.end) > 0 {
+	//		return false
+	//	}
+	//} else {
+	//	if bytes.Compare(itr.name, itr.start) < 0 {
+	//		return false
+	//	}
+	//}
 
 	return true
 }
