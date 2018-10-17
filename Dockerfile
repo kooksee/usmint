@@ -1,13 +1,13 @@
 FROM ubuntu:16.04
 
 RUN rm -rf /app && mkdir /app && mkdir /kdata
-COPY main /app/kchain
+COPY main /app/usmint
 WORKDIR /app
 
-EXPOSE 46657
-EXPOSE 46656
+EXPOSE 26657
+EXPOSE 26656
 
 VOLUME /kdata
 
 CMD ["node"]
-ENTRYPOINT ["/app/kchain","--home","/kdata"]
+ENTRYPOINT ["/app/usmint","--home","/kdata"]

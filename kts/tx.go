@@ -11,47 +11,27 @@ import (
 	"github.com/kooksee/usmint/cmn/wire"
 )
 
-func DecodeQueryMsg(data []byte) (h QueryHandler, err error) {
-	return h, wire.Decode(data, h)
-}
-
-type QueryHandler interface {
-	Do(res *types.ResponseQuery)
-}
-
-func DecodeMsg(data []byte) (h DataHandler, err error) {
-	return h, wire.Decode(data, h)
-}
-
-type DataHandler interface {
-	OnCheck(tx *Transaction, res *types.ResponseCheckTx)
-	OnDeliver(tx *Transaction, res *types.ResponseDeliverTx)
-}
-
-type BaseDataHandler struct {
-	DataHandler
-}
-
-func (t *BaseDataHandler) OnCheck(tx *Transaction, res *types.ResponseCheckTx)     {}
-func (t *BaseDataHandler) OnDeliver(tx *Transaction, res *types.ResponseDeliverTx) {}
-
 func NewTransaction() *Transaction {
 	return &Transaction{Timestamp: uint64(time.Now().Unix())}
 }
 
 type Transaction struct {
-	Sign      []byte          `json:"sign"`
-	NodeSign  []byte          `json:"node_sign"`
-	Data      []byte          `json:"data"`
-	Event     string          `json:"event"`
-	Timestamp uint64          `json:"time"`
+	Sign      []byte `json:"sign"`
+	NSign     []byte `json:"nsign"`
+	Data      []byte `json:"data"`
+	Event     string `json:"event"`
+	Timestamp uint64 `json:"time"`
 	miner     common.Address
 	sender    common.Address
-	Val       types.Validator `json:"-"`
+	val       types.Validator
 }
 
 func (t *Transaction) Decode(tx []byte) error {
 	return wire.Decode(tx, t)
+}
+
+func (t *Transaction) SetValidator(val types.Validator) {
+	t.val = val
 }
 
 func (t *Transaction) Encode() []byte {
@@ -70,15 +50,15 @@ func (t *Transaction) GetMiner() common.Address {
 	return t.miner
 }
 
-func (t *Transaction) DoNodeSign(prv *ecdsa.PrivateKey) (err error) {
-	t.NodeSign, err = crypto.Sign(t.GetSigHash(), prv)
+func (t *Transaction) DoNSign(prv *ecdsa.PrivateKey) (err error) {
+	t.NSign, err = crypto.Sign(t.GetSigHash(), prv)
 	if err != nil {
 		cmn.MustNotErr("DoNodeSign", err)
 	}
 	return
 }
 
-func (t *Transaction) DoSenderSign(prv *ecdsa.PrivateKey) (err error) {
+func (t *Transaction) DoSign(prv *ecdsa.PrivateKey) (err error) {
 	t.Sign, err = crypto.Sign(crypto.Keccak256(t.Data), prv)
 	if err != nil {
 		cmn.MustNotErr("DoNodeSign", err)
@@ -88,23 +68,17 @@ func (t *Transaction) DoSenderSign(prv *ecdsa.PrivateKey) (err error) {
 
 // VerifySign 验证数据签名
 func (t *Transaction) Verify() error {
-	puk1, err := crypto.SigToPub(t.GetSigHash(), t.NodeSign)
+	puk1, err := crypto.SigToPub(t.GetSigHash(), t.NSign)
 	if err != nil {
-		return cmn.ErrPipe("Transaction VerifySign error with node", err)
+		return cmn.ErrPipe("Transaction VerifySign Error With NSign", err)
 	}
 	t.miner = crypto.PubkeyToAddress(*puk1)
 
 	puk, err := crypto.SigToPub(crypto.Keccak256(t.Data), t.Sign)
 	if err != nil {
-		return cmn.ErrPipe("Transaction VerifySign error with data", err)
+		return cmn.ErrPipe("Transaction VerifySign Error With Sign", err)
 	}
 	t.sender = crypto.PubkeyToAddress(*puk)
 
 	return nil
-}
-
-func init() {
-	wire.RegisterInterface((*DataHandler)(nil))
-	wire.Register("tx", &Transaction{})
-	wire.Register("baseHandler", &BaseDataHandler{})
 }
