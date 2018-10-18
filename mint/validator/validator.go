@@ -28,45 +28,9 @@ func (t *Validator) OnCheck(tx *kts.Transaction, res *types.ResponseCheckTx) {
 }
 
 func (t *Validator) OnDeliver(tx *kts.Transaction, res *types.ResponseDeliverTx) {
-	tx.Val.Power = t.Power
-	tx.Val.PubKey = t.PubKey
-	tx.Val.Address = t.Address
-}
-
-func UpdateValidator(val *types.Validator) {
-	if val.Power <= 0 {
-		if err := db.Del(val.Address); err != nil {
-			panic(err.Error())
-		}
-	} else {
-		dt, _ := val.Marshal()
-		if err := db.Set(val.Address, dt); err != nil {
-			panic(err.Error())
-		}
-	}
-}
-
-func GetValidator(addr []byte) (val *types.Validator) {
-	dt, err := db.Get(addr)
-	if err != nil {
-		panic(err.Error())
-	}
-	if err := val.Unmarshal(dt); err != nil {
-		panic(err.Error())
-	}
-	return
-}
-
-func Validators() (vals []*types.Validator) {
-	if err := db.Range(func(_, value []byte) error {
-		val := new(types.Validator)
-		if err := val.Unmarshal(value); err != nil {
-			panic(err.Error())
-		}
-		vals = append(vals, val)
-		return nil
-	}); err != nil {
-		panic(err.Error())
-	}
-	return
+	tx.SetValidator(types.Validator{
+		Power:   t.Power,
+		PubKey:  t.PubKey,
+		Address: t.Address,
+	})
 }

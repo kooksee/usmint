@@ -1,5 +1,9 @@
 package kts
 
+import (
+	"github.com/kooksee/usmint/cmn/wire"
+)
+
 func init() {
 	wire.RegisterInterface((*DataHandler)(nil))
 

@@ -112,7 +112,7 @@ func (app *KApp) DeliverTx(txBytes []byte) (res types.ResponseDeliverTx) {
 
 	if res.Code == 0 {
 		if tx.Event == "validator" {
-			app.valUpdates = append(app.valUpdates, tx.Val)
+			app.valUpdates = append(app.valUpdates, tx.GetValidator())
 		}
 		state.GetState().AppHash = cmn.Ripemd160(append(state.GetState().AppHash, txBytes...))
 	}

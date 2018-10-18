@@ -34,6 +34,10 @@ func (t *Transaction) SetValidator(val types.Validator) {
 	t.val = val
 }
 
+func (t *Transaction) GetValidator() types.Validator {
+	return t.val
+}
+
 func (t *Transaction) Encode() []byte {
 	return wire.Encode(t)
 }

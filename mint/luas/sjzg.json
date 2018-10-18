@@ -1,0 +1,289 @@
+{
+  "picInfo": {
+    "id": 817322388,
+    "res_id": "VCG21gic19998843",
+    "title": "上海城市风光大数据概念",
+    "price_type": "0",
+    "rest": null,
+    "price": null,
+    "img_date": "2016-12-22 11:14:00",
+    "width": 10554,
+    "height": 4411,
+    "dlsize": 21810380,
+    "caption": "",
+    "xResolution": "300",
+    "yResolution": "300",
+    "license": "RM",
+    "type": 2,
+    "assetFormat": "Jpg",
+    "cameraman": "张海涛",
+    "providerId": 698,
+    "collectionId": 837,
+    "brandId": 10227,
+    "brand": "500px Select RM",
+    "restrict": "暂无",
+    "portraiture": null,
+    "copyright": "未获得模特肖像权或所有物权授权",
+    "prevPicResId": null,
+    "nextPicId": 810902634,
+    "nextPicResId": null,
+    "url": "//goss.vcg.com/creative/vcg/800/new/gic19998843.jpg",
+    "keywords": [
+      {
+        "kind": 0,
+        "cnname": "IT技术支持",
+        "id": 4025
+      },
+      {
+        "kind": 0,
+        "cnname": "都市风光",
+        "id": 4244
+      },
+      {
+        "kind": 0,
+        "cnname": "户外",
+        "id": 4246
+      },
+      {
+        "kind": 0,
+        "cnname": "日落",
+        "id": 4257
+      },
+      {
+        "kind": 0,
+        "cnname": "夏天",
+        "id": 4268
+      },
+      {
+        "kind": 0,
+        "cnname": "球体",
+        "id": 7442
+      },
+      {
+        "kind": 0,
+        "cnname": "角度",
+        "id": 7469
+      },
+      {
+        "kind": 0,
+        "cnname": "著名景点",
+        "id": 8153
+      },
+      {
+        "kind": 1,
+        "cnname": "网络空间",
+        "id": 8270
+      },
+      {
+        "kind": 1,
+        "cnname": "城市生活",
+        "id": 8278
+      },
+      {
+        "kind": 0,
+        "cnname": "旅游目的地",
+        "id": 8819
+      },
+      {
+        "kind": 0,
+        "cnname": "建筑",
+        "id": 9419
+      },
+      {
+        "kind": 0,
+        "cnname": "生活方式",
+        "id": 9875
+      },
+      {
+        "kind": 0,
+        "cnname": "图像",
+        "id": 9897
+      },
+      {
+        "kind": 0,
+        "cnname": "摄影",
+        "id": 10311
+      },
+      {
+        "kind": 2,
+        "cnname": "彩色图片",
+        "id": 12004
+      },
+      {
+        "kind": 2,
+        "cnname": "长时间曝光",
+        "id": 12042
+      },
+      {
+        "kind": 2,
+        "cnname": "全景",
+        "id": 12043
+      },
+      {
+        "kind": 2,
+        "cnname": "水平画幅",
+        "id": 12045
+      },
+      {
+        "kind": 2,
+        "cnname": "高视角",
+        "id": 12105
+      },
+      {
+        "kind": 3,
+        "cnname": "无人",
+        "id": 12109
+      },
+      {
+        "kind": 4,
+        "cnname": "亚洲",
+        "id": 13073
+      },
+      {
+        "kind": 4,
+        "cnname": "中国",
+        "id": 13804
+      },
+      {
+        "kind": 4,
+        "cnname": "上海",
+        "id": 14007
+      },
+      {
+        "kind": 4,
+        "cnname": "浦东",
+        "id": 14015
+      },
+      {
+        "kind": 4,
+        "cnname": "东方明珠塔",
+        "id": 14016
+      },
+      {
+        "kind": 4,
+        "cnname": "金茂大厦",
+        "id": 14017
+      },
+      {
+        "kind": 4,
+        "cnname": "外滩",
+        "id": 14023
+      },
+      {
+        "kind": 0,
+        "cnname": "天空",
+        "id": 32905
+      },
+      {
+        "kind": 0,
+        "cnname": "多云",
+        "id": 32912
+      },
+      {
+        "kind": 0,
+        "cnname": "云",
+        "id": 32918
+      },
+      {
+        "kind": 0,
+        "cnname": "黄浦江",
+        "id": 34282
+      },
+      {
+        "kind": 0,
+        "cnname": "现代",
+        "id": 35393
+      },
+      {
+        "kind": 0,
+        "cnname": "酒店",
+        "id": 36154
+      },
+      {
+        "kind": 0,
+        "cnname": "办公大楼",
+        "id": 36352
+      },
+      {
+        "kind": 0,
+        "cnname": "办公区",
+        "id": 36353
+      },
+      {
+        "kind": 0,
+        "cnname": "摩天大楼",
+        "id": 36354
+      },
+      {
+        "kind": 0,
+        "cnname": "房屋",
+        "id": 36396
+      },
+      {
+        "kind": 0,
+        "cnname": "城市",
+        "id": 36467
+      },
+      {
+        "kind": 0,
+        "cnname": "都市风景",
+        "id": 36468
+      },
+      {
+        "kind": 0,
+        "cnname": "城市天际线",
+        "id": 36469
+      },
+      {
+        "kind": 0,
+        "cnname": "二进制码",
+        "id": 37507
+      },
+      {
+        "kind": 0,
+        "cnname": "数据",
+        "id": 39121
+      },
+      {
+        "kind": 4,
+        "cnname": "陆家嘴",
+        "id": 66807
+      },
+      {
+        "kind": 4,
+        "cnname": "上海环球金融中心",
+        "id": 66838
+      },
+      {
+        "kind": 0,
+        "cnname": "CBD",
+        "id": 75758
+      },
+      {
+        "kind": 0,
+        "cnname": "上海中心大厦",
+        "id": 76746
+      },
+      {
+        "kind": 0,
+        "cnname": "汽车广告背景图",
+        "id": 78185
+      }
+    ],
+    "graphicalStyle": 1,
+    "oneCategory": null,
+    "oneCategoryCn": null,
+    "category": null,
+    "productIds": "3,",
+    "source": "1,",
+    "oss176": "//goss3.vcg.com/creative/vcg/170/19998000/gic19998843.jpg",
+    "downLoad": false,
+    "file_type": "jpg",
+    "size": "89.36 x 37.35cm (35.18 x 14.70 in.)",
+    "store_size": "20.8 MB - JPG",
+    "specification": "10554 x 4411 px (300dpi) | 133.2 MB - RGB",
+    "panorama": false
+  },
+  "groupInfo": null,
+  "topic": null
+}
