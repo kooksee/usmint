@@ -45,6 +45,7 @@ func (app *KApp) SetOption(req types.RequestSetOption) types.ResponseSetOption {
 
 // 实现abci的CheckTx协议
 func (app *KApp) CheckTx(txBytes []byte) (res types.ResponseCheckTx) {
+
 	// 检查tx大小
 	if err := cmn.CheckMsgSize(txBytes); err != nil {
 		res.Code = 1

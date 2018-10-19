@@ -22,7 +22,6 @@ var otherClientAddress = "2ee06d8ec74bf935ece278644891dfbc997735c4"
 
 const ethPrivKey = "a168ea1e8ee6c5fb8c761369aa04d2c89a7cef40599596ef0f32909946e01a2f"
 
-
 func init() {
 	ddd, _ := hex.DecodeString(ethPrivKey)
 	clientPriV, _ = crypto.ToECDSA(ddd)

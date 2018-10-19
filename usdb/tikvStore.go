@@ -8,12 +8,14 @@ import (
 	"context"
 	"bytes"
 	"fmt"
+	"github.com/allegro/bigcache"
 )
 
 type TikvStore struct {
 	db.DB
-	name []byte
-	c    kv.Storage
+	name  []byte
+	c     kv.Storage
+	cache *bigcache.BigCache
 }
 
 func NewTikvStore(name, url string) *TikvStore {
@@ -52,10 +54,22 @@ func (db *TikvStore) getSnapshot() kv.Snapshot {
 
 // Implements DB.
 func (db *TikvStore) Get(key []byte) []byte {
-	ret, err := db.getSnapshot().Get(db.withPrefix(key))
+	k := db.withPrefix(key)
+
+	rt, err := db.cache.Get(string(k))
+	if err == nil && len(rt) != 0 {
+		return rt
+	}
+
+	ret, err := db.getSnapshot().Get(k)
 	if !kv.IsErrNotFound(err) {
 		cmn.MustNotErr("tikv store Get error", err)
 	}
+
+	if err := db.cache.Set(string(k), ret); err != nil {
+		cmn.Log().Error("cache set error", "err", err)
+	}
+
 	return ret
 }
 
@@ -67,8 +81,13 @@ func (db *TikvStore) Has(key []byte) bool {
 
 // Implements DB.
 func (db *TikvStore) Set(key []byte, value []byte) {
+	k := db.withPrefix(key)
+
 	db.withTxn(func(txn kv.Transaction) (err error) {
-		return txn.Set(db.withPrefix(key), value)
+		if err := db.cache.Set(string(k), value); err != nil {
+			cmn.Log().Error("cache error", "err", err)
+		}
+		return txn.Set(k, value)
 	})
 }
 

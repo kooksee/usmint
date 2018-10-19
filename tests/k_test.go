@@ -4,7 +4,6 @@ import (
 	"testing"
 	"github.com/tendermint/tendermint/types"
 	"fmt"
-	"encoding/json"
 	dbm "github.com/tendermint/tendermint/libs/db"
 	"time"
 

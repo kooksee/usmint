@@ -20,7 +20,6 @@ import (
 	"github.com/kooksee/usmint/kts"
 	"github.com/kooksee/usmint/mint/minter"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/tendermint/tendermint/types"
 )
 
 func TestNodeJoin(t *testing.T) {
@@ -152,7 +151,7 @@ func TestAddMiner(t *testing.T) {
 	fmt.Println(hex.EncodeToString(m2k[:]))
 }
 
-func TestName11(t *testing.T) {
+func TestSetMiner(t *testing.T) {
 	for a := 100; a > 0; a-- {
 		tx := kts.NewTransaction()
 		tx.Data = (&minter.SetMiner{
@@ -169,13 +168,12 @@ func TestName11(t *testing.T) {
 		if err != nil {
 			panic(err.Error())
 		}
-		tx.DoNodeSign(p1)
-		tx.DoSenderSign(p1)
-		res, err := abciClient.BroadcastTxAsync(types.Tx(tx.Encode()))
+		tx.DoNSign(p1)
+		tx.DoSign(p1)
+		res, err := abciClient.BroadcastTxAsync(tx.Encode())
 		if err != nil {
 			panic(err.Error())
 		}
 		jsonPrintln(res)
 	}
-
 }
