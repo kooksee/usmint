@@ -14,6 +14,7 @@ import (
 	"github.com/tendermint/tendermint/proxy"
 	"path/filepath"
 	"github.com/kooksee/usmint/node"
+	"github.com/kooksee/usmint/usdb"
 )
 
 func DefaultNewNode(config *config.Config, logger log.Logger) (*node.Node, error) {
@@ -25,6 +26,9 @@ func DefaultNewNode(config *config.Config, logger log.Logger) (*node.Node, error
 
 	// 初始化db
 	cmn.InitAppDb(filepath.Join(config.DBDir(), "mint_app.db"))
+
+	usdb.Name = "txs"
+	usdb.Init()
 
 	n, err := node.NewNode(config,
 		privval.LoadOrGenFilePV(config.PrivValidatorFile()),

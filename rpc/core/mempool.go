@@ -11,6 +11,8 @@ import (
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	"github.com/tendermint/tendermint/types"
 	cmn "github.com/tendermint/tendermint/libs/common"
+	"github.com/kooksee/usmint/usdb"
+	"encoding/hex"
 )
 
 //-----------------------------------------------------------------------------
@@ -50,10 +52,23 @@ import (
 // | tx        | Tx   | nil     | true     | The transaction |
 func BroadcastTxAsync(tx types.Tx) (*ctypes.ResultBroadcastTx, error) {
 
-	if err := mempool.CheckTx(tx, nil); err != nil {
-		return nil, fmt.Errorf("Error broadcasting transaction: %s", err.Error())
+	h := tx.Hash()
+
+	// 检查tx是否存在
+	if usdb.GetDb().Has(h) {
+		return nil, fmt.Errorf("The Tx(%s) Had Existed ", hex.EncodeToString(h))
 	}
-	return &ctypes.ResultBroadcastTx{Hash: tx.Hash()}, nil
+
+	// 存储tx
+	usdb.GetDb().Set(h, tx)
+
+	// 形成新的tx
+	tx = types.Tx(h)
+
+	if err := mempool.CheckTx(tx, nil); err != nil {
+		return nil, fmt.Errorf("Error broadcasting transaction: %s ", err.Error())
+	}
+	return &ctypes.ResultBroadcastTx{Hash: h}, nil
 }
 
 // Returns with the response from CheckTx.
@@ -89,12 +104,26 @@ func BroadcastTxAsync(tx types.Tx) (*ctypes.ResultBroadcastTx, error) {
 // |-----------+------+---------+----------+-----------------|
 // | tx        | Tx   | nil     | true     | The transaction |
 func BroadcastTxSync(tx types.Tx) (*ctypes.ResultBroadcastTx, error) {
+
+	h := tx.Hash()
+
+	// 检查tx是否存在
+	if usdb.GetDb().Has(h) {
+		return nil, fmt.Errorf("The Tx(%s) Had Existed ", hex.EncodeToString(h))
+	}
+
+	// 存储tx
+	usdb.GetDb().Set(h, tx)
+
+	// 形成新的tx
+	tx = types.Tx(h)
+
 	resCh := make(chan *abci.Response, 1)
 	err := mempool.CheckTx(tx, func(res *abci.Response) {
 		resCh <- res
 	})
 	if err != nil {
-		return nil, fmt.Errorf("Error broadcasting transaction: %v", err)
+		return nil, fmt.Errorf("Error broadcasting transaction: %v ", err)
 	}
 	res := <-resCh
 	r := res.GetCheckTx()
@@ -102,7 +131,7 @@ func BroadcastTxSync(tx types.Tx) (*ctypes.ResultBroadcastTx, error) {
 		Code: r.Code,
 		Data: r.Data,
 		Log:  r.Log,
-		Hash: tx.Hash(),
+		Hash: h,
 	}, nil
 }
 
@@ -151,6 +180,19 @@ func BroadcastTxSync(tx types.Tx) (*ctypes.ResultBroadcastTx, error) {
 // | tx        | Tx   | nil     | true     | The transaction |
 func BroadcastTxCommit(tx types.Tx) (*ctypes.ResultBroadcastTxCommit, error) {
 
+	h := tx.Hash()
+
+	// 检查tx是否存在
+	if usdb.GetDb().Has(h) {
+		return nil, fmt.Errorf("The Tx(%s) Had Existed ", hex.EncodeToString(h))
+	}
+
+	// 存储tx
+	usdb.GetDb().Set(h, tx)
+
+	// 形成新的tx
+	tx = types.Tx(h)
+
 	// subscribe to tx being committed in block
 	ctx, cancel := context.WithTimeout(context.Background(), subscribeTimeout)
 	defer cancel()
@@ -160,7 +202,7 @@ func BroadcastTxCommit(tx types.Tx) (*ctypes.ResultBroadcastTxCommit, error) {
 	if err != nil {
 		err = errors.Wrap(err, "failed to subscribe to tx")
 		logger.Error("Error on broadcastTxCommit", "err", err)
-		return nil, fmt.Errorf("Error on broadcastTxCommit: %v", err)
+		return nil, fmt.Errorf("Error on broadcastTxCommit: %v ", err)
 	}
 	defer eventBus.Unsubscribe(context.Background(), "mempool", q)
 
@@ -171,7 +213,7 @@ func BroadcastTxCommit(tx types.Tx) (*ctypes.ResultBroadcastTxCommit, error) {
 	})
 	if err != nil {
 		logger.Error("Error on broadcastTxCommit", "err", err)
-		return nil, fmt.Errorf("Error on broadcastTxCommit: %v", err)
+		return nil, fmt.Errorf("Error on broadcastTxCommit: %v ", err)
 	}
 	checkTxRes := <-checkTxResCh
 	checkTxR := checkTxRes.GetCheckTx()
@@ -180,7 +222,7 @@ func BroadcastTxCommit(tx types.Tx) (*ctypes.ResultBroadcastTxCommit, error) {
 		return &ctypes.ResultBroadcastTxCommit{
 			CheckTx:   *checkTxR,
 			DeliverTx: abci.ResponseDeliverTx{},
-			Hash:      tx.Hash(),
+			Hash:      h,
 		}, nil
 	}
 
@@ -197,7 +239,7 @@ func BroadcastTxCommit(tx types.Tx) (*ctypes.ResultBroadcastTxCommit, error) {
 		return &ctypes.ResultBroadcastTxCommit{
 			CheckTx:   *checkTxR,
 			DeliverTx: deliverTxR,
-			Hash:      tx.Hash(),
+			Hash:      h,
 			Height:    deliverTxRes.Height,
 		}, nil
 	case <-timer.C:
@@ -205,8 +247,8 @@ func BroadcastTxCommit(tx types.Tx) (*ctypes.ResultBroadcastTxCommit, error) {
 		return &ctypes.ResultBroadcastTxCommit{
 			CheckTx:   *checkTxR,
 			DeliverTx: abci.ResponseDeliverTx{},
-			Hash:      tx.Hash(),
-		}, fmt.Errorf("Timed out waiting for transaction to be included in a block")
+			Hash:      h,
+		}, fmt.Errorf("Timed out waiting for transaction to be included in a block ")
 	}
 }
 

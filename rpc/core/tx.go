@@ -9,6 +9,7 @@ import (
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	"github.com/tendermint/tendermint/state/txindex/null"
 	"github.com/tendermint/tendermint/types"
+	"github.com/kooksee/usmint/usdb"
 )
 
 // Tx allows you to query the transaction results. `nil` could mean the
@@ -84,7 +85,7 @@ func Tx(hash []byte, prove bool) (*ctypes.ResultTx, error) {
 	}
 
 	if r == nil {
-		return nil, fmt.Errorf("Tx (%X) not found", hash)
+		return nil, fmt.Errorf("Tx (%X) not found ", hash)
 	}
 
 	height := r.Height
@@ -101,8 +102,9 @@ func Tx(hash []byte, prove bool) (*ctypes.ResultTx, error) {
 		Height:   height,
 		Index:    uint32(index),
 		TxResult: r.Result,
-		Tx:       r.Tx,
-		Proof:    proof,
+		//Tx:       r.Tx,
+		Tx:    usdb.GetDb().Get(hash),
+		Proof: proof,
 	}, nil
 }
 
@@ -206,12 +208,13 @@ func TxSearch(query string, prove bool, page, perPage int) (*ctypes.ResultTxSear
 		}
 
 		apiResults[i] = &ctypes.ResultTx{
-			Hash:     r.Tx.Hash(),
+			Hash:     cmn.HexBytes(r.Tx),
 			Height:   height,
 			Index:    index,
 			TxResult: r.Result,
-			Tx:       r.Tx,
-			Proof:    proof,
+			//Tx:       r.Tx,
+			Tx:    usdb.GetDb().Get(r.Tx),
+			Proof: proof,
 		}
 	}
 

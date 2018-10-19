@@ -31,6 +31,12 @@ func TestIter(t *testing.T) {
 	}
 }
 
+func TestName1(t *testing.T) {
+	Name = "test"
+	Init()
+	GetDb()
+}
+
 func TestConnect(t *testing.T) {
 	c := NewTikvStore("test", pd)
 	fmt.Println(string(c.Get([]byte("hello"))))
