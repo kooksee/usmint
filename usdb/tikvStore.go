@@ -1,4 +1,4 @@
-package db
+package usdb
 
 import (
 	"github.com/tendermint/tendermint/libs/db"
@@ -13,17 +13,14 @@ import (
 type TikvStore struct {
 	db.DB
 	name []byte
-
-	c kv.Storage
+	c    kv.Storage
 }
 
 func NewTikvStore(name, url string) *TikvStore {
 	tikv.MaxConnectionCount = 128
 
-	//tikv.NewRawKVClient()
-
 	// tikv://etcd-node1:port,etcd-node2:port?cluster=1&disableGC=false
-	store, err := tikv.Driver{}.Open(fmt.Sprintf("tikv://%s/pd?cluster=1&disableGC=false", url))
+	store, err := tikv.Driver{}.Open(fmt.Sprintf("tikv://%s/pd", url))
 	cmn.MustNotErr("NewTikvStore Error", err)
 	return &TikvStore{
 		name: []byte(name),
@@ -166,14 +163,14 @@ func (m *tikvStoreBatch) WriteSync() {
 func (db *TikvStore) Iterator(start, end []byte) db.Iterator {
 	it, err := db.getSnapshot().Seek(db.withPrefix(start))
 	cmn.MustNotErr("TikvStore Iterator Error", err)
-	return newTikvStoreIterator(db.name, false, it, start, end)
+	return newTikvStoreIterator(db.name, false, it, db.withPrefix(start), db.withPrefix(end))
 }
 
 // Implements DB.
 func (db *TikvStore) ReverseIterator(start, end []byte) db.Iterator {
 	it, err := db.getSnapshot().SeekReverse(db.withPrefix(start))
 	cmn.MustNotErr("TikvStore ReverseIterator Error", err)
-	return newTikvStoreIterator(db.name, true, it, start, end)
+	return newTikvStoreIterator(db.name, true, it, db.withPrefix(start), db.withPrefix(end))
 }
 
 type tikvStoreIterator struct {
@@ -207,15 +204,15 @@ func (itr *tikvStoreIterator) Valid() bool {
 		return false
 	}
 
-	//if !itr.reverse {
-	//	if bytes.Compare(itr.name, itr.end) > 0 {
-	//		return false
-	//	}
-	//} else {
-	//	if bytes.Compare(itr.name, itr.start) < 0 {
-	//		return false
-	//	}
-	//}
+	if !itr.reverse {
+		if bytes.Compare(itr.r.Key(), itr.end) > 0 {
+			return false
+		}
+	} else {
+		if bytes.Compare(itr.r.Key(), itr.start) < 0 {
+			return false
+		}
+	}
 
 	return true
 }

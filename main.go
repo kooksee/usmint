@@ -57,6 +57,7 @@ func main() {
 		commands.ShowNodeIDCmd,
 		commands.GenNodeKeyCmd,
 		cmds.VersionCmd,
+		cmds.ServerCmd,
 	)
 
 	// Create & start node

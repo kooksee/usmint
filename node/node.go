@@ -27,11 +27,14 @@ import (
 	"github.com/tendermint/tendermint/p2p/pex"
 	"github.com/tendermint/tendermint/privval"
 	"github.com/tendermint/tendermint/proxy"
-	rpccore "github.com/tendermint/tendermint/rpc/core"
-	ctypes "github.com/tendermint/tendermint/rpc/core/types"
-	grpccore "github.com/tendermint/tendermint/rpc/grpc"
+
+	//rpccore "github.com/tendermint/tendermint/rpc/core"
+	//ctypes "github.com/tendermint/tendermint/rpc/core/types"
+	rpccore "github.com/kooksee/usmint/rpc/core"
+	ctypes "github.com/kooksee/usmint/rpc/core/types"
 	"github.com/tendermint/tendermint/rpc/lib"
 	"github.com/tendermint/tendermint/rpc/lib/server"
+
 	sm "github.com/tendermint/tendermint/state"
 	"github.com/tendermint/tendermint/state/txindex"
 	"github.com/tendermint/tendermint/state/txindex/kv"
@@ -55,6 +58,11 @@ type DBProvider func(*DBContext) (dbm.DB, error)
 
 // DefaultDBProvider returns a database using the DBBackend and DBDir
 // specified in the ctx.Config.
+//func DefaultDBProvider(ctx *DBContext) (dbm.DB, error) {
+//	dbType := dbm.DBBackendType(ctx.Config.DBBackend)
+//	return dbm.NewDB(ctx.ID, dbType, ctx.Config.DBDir()), nil
+//}
+
 func DefaultDBProvider(ctx *DBContext) (dbm.DB, error) {
 	dbType := dbm.DBBackendType(ctx.Config.DBBackend)
 	return dbm.NewDB(ctx.ID, dbType, ctx.Config.DBDir()), nil
@@ -562,7 +570,7 @@ func (n *Node) startRPC() ([]net.Listener, error) {
 		rpcLogger := n.Logger.With("module", "rpc-server")
 		wm := rpcserver.NewWebsocketManager(rpccore.Routes, coreCodec, rpcserver.EventSubscriber(n.eventBus))
 		wm.SetLogger(rpcLogger.With("protocol", "websocket"))
-		mux.HandleFunc("/websocket", wm.WebsocketHandler)
+		mux.HandleFunc("/ws", wm.WebsocketHandler)
 		rpcserver.RegisterRPCFuncs(mux, rpccore.Routes, coreCodec, rpcLogger)
 		listener, err := rpcserver.StartHTTPServer(
 			listenAddr,
@@ -574,21 +582,6 @@ func (n *Node) startRPC() ([]net.Listener, error) {
 			return nil, err
 		}
 		listeners[i] = listener
-	}
-
-	// we expose a simplified api over grpc for convenience to app devs
-	grpcListenAddr := n.config.RPC.GRPCListenAddress
-	if grpcListenAddr != "" {
-		listener, err := grpccore.StartGRPCServer(
-			grpcListenAddr,
-			grpccore.Config{
-				MaxOpenConnections: n.config.RPC.GRPCMaxOpenConnections,
-			},
-		)
-		if err != nil {
-			return nil, err
-		}
-		listeners = append(listeners, listener)
 	}
 
 	return listeners, nil
