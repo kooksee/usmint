@@ -25,6 +25,8 @@ const ethPrivKey = "a168ea1e8ee6c5fb8c761369aa04d2c89a7cef40599596ef0f32909946e0
 func init() {
 	ddd, _ := hex.DecodeString(ethPrivKey)
 	clientPriV, _ = crypto.ToECDSA(ddd)
+
+
 	//add := crypto.PubkeyToAddress(clientPriV.PublicKey)
 
 	//pvv, err := ethc.GenerateKey()

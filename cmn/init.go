@@ -5,7 +5,6 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	"github.com/tendermint/tendermint/config"
 	"github.com/kooksee/kdb"
-	"github.com/kooksee/usmint/node"
 	"golang.org/x/crypto/ripemd160"
 	"fmt"
 )
@@ -52,19 +51,6 @@ func GetCfg() *config.Config {
 	return cfg
 }
 
-var n *node.Node
-
-func GetNode() *node.Node {
-	if n == nil {
-		panic("please init node")
-	}
-	return n
-}
-
-func InitNode(n1 *node.Node) {
-	n = n1
-}
-
 func Ripemd160(bytes []byte) []byte {
 	h := ripemd160.New()
 	h.Write(bytes)
@@ -72,11 +58,10 @@ func Ripemd160(bytes []byte) []byte {
 }
 
 var maxMsgSize = 1024 * 1024
+
 func CheckMsgSize(txBytes []byte) error {
 	if len(txBytes) > maxMsgSize {
 		return fmt.Errorf("msg size exceeds max size (%d > %d)", len(txBytes), maxMsgSize)
 	}
 	return nil
 }
-
-

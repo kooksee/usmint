@@ -18,6 +18,13 @@ import (
 )
 
 func DefaultNewNode(config *config.Config, logger log.Logger) (*node.Node, error) {
+	h, err := os.Hostname()
+	if err != nil {
+		cmn.MustNotErr("init hostname error", err)
+	}
+
+	logger = logger.With("service", "usmint", "hostname", h)
+
 	// init cmn
 	cmn.InitLog(logger)
 
@@ -28,11 +35,11 @@ func DefaultNewNode(config *config.Config, logger log.Logger) (*node.Node, error
 	cmn.InitAppDb(filepath.Join(config.DBDir(), "mint_app.db"))
 
 	usdb.Name = "txs"
-	usdb.Init()
+	usdb.Init(logger)
 
 	n, err := node.NewNode(config,
 		privval.LoadOrGenFilePV(config.PrivValidatorFile()),
-		proxy.NewLocalClientCreator(app.New()),
+		proxy.NewLocalClientCreator(app.New(logger)),
 		node.DefaultGenesisDocProviderFunc(config),
 		node.DefaultDBProvider,
 		node.DefaultMetricsProvider(config.Instrumentation),
@@ -40,7 +47,7 @@ func DefaultNewNode(config *config.Config, logger log.Logger) (*node.Node, error
 	)
 
 	// 获得node
-	cmn.InitNode(n)
+	node.InitNode(n)
 
 	return n, err
 }
@@ -61,7 +68,6 @@ func main() {
 		commands.ShowNodeIDCmd,
 		commands.GenNodeKeyCmd,
 		cmds.VersionCmd,
-		cmds.ServerCmd,
 	)
 
 	// Create & start node

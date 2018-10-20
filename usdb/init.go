@@ -7,13 +7,14 @@ import (
 	"os"
 	"github.com/allegro/bigcache"
 	"time"
+	"github.com/tendermint/tendermint/libs/log"
 )
 
 var Name = "txs"
 
 var tdb *TikvStore
 
-func Init() {
+func Init(logger log.Logger) {
 	tikv.MaxConnectionCount = 256
 
 	url := os.Getenv("TIKV")

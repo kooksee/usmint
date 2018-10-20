@@ -159,6 +159,8 @@ func TestSetMiner(t *testing.T) {
 			Power: 10,
 		}).Encode()
 
+		fmt.Println(tx.Timestamp)
+
 		dd, err := hex.DecodeString(node1PriV)
 		if err != nil {
 			panic(err.Error())
@@ -170,7 +172,35 @@ func TestSetMiner(t *testing.T) {
 		}
 		tx.DoNSign(p1)
 		tx.DoSign(p1)
-		res, err := abciClient.BroadcastTxAsync(tx.Encode())
+		res, err := abciClient.BroadcastTxCommit(tx.Encode())
+		if err != nil {
+			panic(err.Error())
+		}
+		jsonPrintln(res)
+	}
+}
+
+func TestDeleteMiner(t *testing.T) {
+	for a := 100; a > 0; a-- {
+		tx := kts.NewTransaction()
+		tx.Data = (&minter.DeleteMiner{
+			Addr: common.HexToAddress("0x2BFb20449ab700f477B3D1903D3d92DeE6518b2B"),
+		}).Encode()
+
+		dd, err := hex.DecodeString(node1PriV)
+		if err != nil {
+			panic(err.Error())
+		}
+
+		p1, err := crypto.ToECDSA(dd)
+		if err != nil {
+			panic(err.Error())
+		}
+		tx.DoNSign(p1)
+		tx.DoSign(p1)
+
+		//res, err := abciClient.BroadcastTxAsync(tx.Encode())
+		res, err := abciClient.BroadcastTxCommit(tx.Encode())
 		if err != nil {
 			panic(err.Error())
 		}

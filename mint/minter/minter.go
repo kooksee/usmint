@@ -18,7 +18,7 @@ type Miner struct {
 func ExistMiner(addr common.Address) bool {
 	dt, err := db.Get(addr.Bytes())
 	if err != nil {
-		panic(err.Error())
+		cmn.MustNotErr("ExistMiner Error", err)
 	}
 	return len(dt) != 0
 }
@@ -26,12 +26,13 @@ func ExistMiner(addr common.Address) bool {
 func IsMaster(addr common.Address) bool {
 	dt, err := db.Get(addr.Bytes())
 	if err != nil {
-		panic(err.Error())
+		cmn.MustNotErr("IsMaster Error", err)
 	}
 	return big.NewInt(0).SetBytes(dt).Int64() == 10
 }
 
 func InitMaster() {
+	cmn.Log().Error("InitMaster", "address", "0x2BFb20449ab700f477B3D1903D3d92DeE6518b2B")
 	cmn.MustNotErr("InitMaster",
 		db.Set(common.HexToAddress("0x2BFb20449ab700f477B3D1903D3d92DeE6518b2B").Bytes(), big.NewInt(10).Bytes()))
 }
@@ -62,7 +63,7 @@ func (t *SetMiner) OnCheck(tx *kts.Transaction, res *types.ResponseCheckTx) {
 
 	if t.Power > 10 {
 		res.Code = 1
-		res.Log = fmt.Sprintf("the miner power must less than 10 (%d)", t.Power)
+		res.Log = fmt.Sprintf("the miner power must less than 10, now(%d)", t.Power)
 		return
 	}
 }

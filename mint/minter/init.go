@@ -1,23 +1,20 @@
 package minter
 
 import (
-	"github.com/tendermint/tendermint/libs/log"
 	"github.com/kooksee/kdb"
-	"github.com/kooksee/usmint/cmn"
 	"github.com/kooksee/usmint/cmn/wire"
+	"github.com/tendermint/tendermint/libs/log"
 )
 
 var (
-	db     kdb.IKHash
-	logger log.Logger
+	db kdb.IKHash
 )
 
 func init() {
-	wire.Register("minter_set", &SetMiner{})
-	wire.Register("minter_del", &DeleteMiner{})
+	wire.Register("miner_set", &SetMiner{})
+	wire.Register("miner_del", &DeleteMiner{})
 }
 
-func Init() {
-	db = kdb.DefaultConfig().GetDb().KHash([]byte("minter"))
-	logger = cmn.Log().With("pkg", "minter")
+func Init(logger log.Logger) {
+	db = kdb.DefaultConfig().GetDb().KHash([]byte("miner"))
 }

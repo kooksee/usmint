@@ -14,22 +14,27 @@ import (
 	"github.com/kooksee/usmint/mint/state"
 	"github.com/kooksee/usmint/mint/minter"
 	"github.com/tendermint/tendermint/crypto/tmhash"
+	"github.com/kooksee/usmint/usdb"
+	"github.com/kooksee/usmint/node"
+	"github.com/tendermint/tendermint/libs/log"
 )
 
 type KApp struct {
 	valUpdates []types.Validator
 	types.BaseApplication
+	logger     log.Logger
 }
 
-func New() *KApp {
+func New(logger log.Logger) *KApp {
 	// 初始化mint模块
-
-	mint.Init()
-	return &KApp{}
+	mint.Init(logger)
+	return &KApp{logger: logger.With("module", "kapp")}
 }
 
 // 实现abci的Info协议
 func (app *KApp) Info(req types.RequestInfo) (res types.ResponseInfo) {
+	d, _ := cmn.JsonMarshalToString(req)
+	app.logger.Info(d, "abci", "Info")
 
 	res.Version = req.Version
 	res.LastBlockHeight = state.GetState().Height
@@ -40,11 +45,17 @@ func (app *KApp) Info(req types.RequestInfo) (res types.ResponseInfo) {
 
 // 实现abci的SetOption协议
 func (app *KApp) SetOption(req types.RequestSetOption) types.ResponseSetOption {
+	d, _ := cmn.JsonMarshalToString(req)
+	app.logger.Info(d, "abci", "SetOption")
 	return types.ResponseSetOption{Code: types.CodeTypeOK}
 }
 
 // 实现abci的CheckTx协议
 func (app *KApp) CheckTx(txBytes []byte) (res types.ResponseCheckTx) {
+	app.logger.Info("abci.CheckTx", "tx", hex.EncodeToString(txBytes))
+
+	// 获取tx
+	txBytes = usdb.GetDb().Get(txBytes)
 
 	// 检查tx大小
 	if err := cmn.CheckMsgSize(txBytes); err != nil {
@@ -55,7 +66,7 @@ func (app *KApp) CheckTx(txBytes []byte) (res types.ResponseCheckTx) {
 
 	// 检查tx是否已经存在
 	txHash := tmhash.Sum(txBytes)
-	tx, err := cmn.GetNode().Indexer().Get(txHash)
+	tx, err := node.GetNode().Indexer().Get(txHash)
 	if err != nil {
 		res.Code = 1
 		res.Log = err.Error()
@@ -105,6 +116,11 @@ func (app *KApp) CheckTx(txBytes []byte) (res types.ResponseCheckTx) {
 
 // 实现abci的DeliverTx协议
 func (app *KApp) DeliverTx(txBytes []byte) (res types.ResponseDeliverTx) {
+	app.logger.Info("abci.DeliverTx", "tx", hex.EncodeToString(txBytes))
+
+	// 获取tx
+	txBytes = usdb.GetDb().Get(txBytes)
+
 	tx := kts.NewTransaction()
 	tx.Decode(txBytes)
 
@@ -122,10 +138,14 @@ func (app *KApp) DeliverTx(txBytes []byte) (res types.ResponseDeliverTx) {
 
 // Commit will panic if InitChain was not called
 func (app *KApp) Commit() types.ResponseCommit {
+	app.logger.Info("abci.Commit", "apphash", hex.EncodeToString(state.GetState().AppHash))
+
 	return types.ResponseCommit{Data: state.GetState().AppHash}
 }
 
 func (app *KApp) Query(reqQuery types.RequestQuery) (res types.ResponseQuery) {
+	app.logger.Info("abci.Query")
+
 	// 检查tx大小
 	if err := cmn.CheckMsgSize(reqQuery.Data); err != nil {
 		res.Code = 1
@@ -145,12 +165,18 @@ func (app *KApp) Query(reqQuery types.RequestQuery) (res types.ResponseQuery) {
 
 // Save the validators in the merkle tree
 func (app *KApp) InitChain(req types.RequestInitChain) types.ResponseInitChain {
+	d, _ := cmn.JsonMarshalToString(req)
+	app.logger.Info(d, "abci", "InitChain")
+
 	// 添加master miner address
 	minter.InitMaster()
 	return types.ResponseInitChain{}
 }
 
 func (app *KApp) BeginBlock(req types.RequestBeginBlock) types.ResponseBeginBlock {
+	d, _ := cmn.JsonMarshalToString(req)
+	app.logger.Info(d, "abci", "BeginBlock")
+
 	app.valUpdates = make([]types.Validator, 0)
 
 	st := state.GetState()
@@ -165,5 +191,8 @@ func (app *KApp) BeginBlock(req types.RequestBeginBlock) types.ResponseBeginBloc
 }
 
 func (app *KApp) EndBlock(req types.RequestEndBlock) types.ResponseEndBlock {
+	d, _ := cmn.JsonMarshalToString(req)
+	app.logger.Info(d, "abci", "EndBlock")
+
 	return types.ResponseEndBlock{ValidatorUpdates: app.valUpdates}
 }

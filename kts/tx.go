@@ -12,7 +12,7 @@ import (
 )
 
 func NewTransaction() *Transaction {
-	return &Transaction{Timestamp: uint64(time.Now().Unix())}
+	return &Transaction{Timestamp: uint64(time.Now().UnixNano())/1000000}
 }
 
 type Transaction struct {
