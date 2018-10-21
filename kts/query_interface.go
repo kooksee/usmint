@@ -6,7 +6,7 @@ import (
 )
 
 func DecodeQueryMsg(data []byte) (h QueryHandler, err error) {
-	return h, wire.Decode(data, h)
+	return h, wire.Decode(data, &h)
 }
 
 type QueryHandler interface {

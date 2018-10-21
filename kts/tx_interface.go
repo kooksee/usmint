@@ -6,7 +6,7 @@ import (
 )
 
 func DecodeMsg(data []byte) (h DataHandler, err error) {
-	return h, wire.Decode(data, h)
+	return h, wire.Decode(data, &h)
 }
 
 type DataHandler interface {

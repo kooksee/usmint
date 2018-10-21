@@ -1,13 +1,13 @@
 package tests
 
 import (
-	"github.com/tendermint/tendermint/rpc/client"
 	"github.com/json-iterator/go"
 	"encoding/hex"
 	"crypto/ecdsa"
 	"encoding/base64"
 	"fmt"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/kooksee/usmint/rpc/client"
 )
 
 var json = jsoniter.ConfigCompatibleWithStandardLibrary

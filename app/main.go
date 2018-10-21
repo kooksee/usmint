@@ -13,7 +13,6 @@ import (
 	"encoding/hex"
 	"github.com/kooksee/usmint/mint/state"
 	"github.com/kooksee/usmint/mint/minter"
-	"github.com/tendermint/tendermint/crypto/tmhash"
 	"github.com/kooksee/usmint/usdb"
 	"github.com/kooksee/usmint/node"
 	"github.com/tendermint/tendermint/libs/log"
@@ -51,12 +50,15 @@ func (app *KApp) SetOption(req types.RequestSetOption) types.ResponseSetOption {
 }
 
 // 实现abci的CheckTx协议
-func (app *KApp) CheckTx(txBytes []byte) (res types.ResponseCheckTx) {
-	app.logger.Info("abci.CheckTx", "tx", hex.EncodeToString(txBytes))
-
+func (app *KApp) CheckTx(txHash []byte) (res types.ResponseCheckTx) {
 	// 获取tx
-	txBytes = usdb.GetDb().Get(txBytes)
+	txBytes := usdb.GetDb().Get(txHash)
 
+	app.logger.Debug("abci.CheckTx",
+		"tx", hex.EncodeToString(txHash),
+		"data", hex.EncodeToString(txBytes))
+
+	app.logger.Debug("check tx size")
 	// 检查tx大小
 	if err := cmn.CheckMsgSize(txBytes); err != nil {
 		res.Code = 1
@@ -64,8 +66,8 @@ func (app *KApp) CheckTx(txBytes []byte) (res types.ResponseCheckTx) {
 		return
 	}
 
+	app.logger.Debug("check tx")
 	// 检查tx是否已经存在
-	txHash := tmhash.Sum(txBytes)
 	tx, err := node.GetNode().Indexer().Get(txHash)
 	if err != nil {
 		res.Code = 1
@@ -79,6 +81,7 @@ func (app *KApp) CheckTx(txBytes []byte) (res types.ResponseCheckTx) {
 		return
 	}
 
+	app.logger.Debug("decode tx")
 	// decode tx
 	tx1 := kts.NewTransaction()
 	if err := tx1.Decode(txBytes); err != nil {
@@ -87,6 +90,7 @@ func (app *KApp) CheckTx(txBytes []byte) (res types.ResponseCheckTx) {
 		return
 	}
 
+	app.logger.Debug("tx verify")
 	// tx verify
 	if err := tx1.Verify(); err != nil {
 		res.Code = 1
@@ -94,23 +98,27 @@ func (app *KApp) CheckTx(txBytes []byte) (res types.ResponseCheckTx) {
 		return
 	}
 
-	// check miner auth
+	app.logger.Debug("check miner auth")
 	if !minter.ExistMiner(tx1.GetMiner()) {
 		res.Code = 1
 		res.Log = fmt.Sprintf("the miner(%s) does not exist", tx1.GetMiner().Hash().String())
 		return
 	}
 
-	// decode abci
+	app.logger.Debug("decode abci")
+	h := minter.SetMiner{}
+	//err = wire.Decode(tx1.Data, &h)
 	msg, err := kts.DecodeMsg(tx1.Data)
 	if err != nil {
 		res.Code = 1
 		res.Log = fmt.Sprintf("Mint CheckTx decodeMsg Error(%s)", err.Error())
 		return
 	}
+	app.logger.Error("result", "data", h)
 
 	msg.OnCheck(tx1, &res)
-
+	//h.OnCheck(tx1, &res)
+	//res.Code=1
 	return
 }
 
@@ -124,7 +132,13 @@ func (app *KApp) DeliverTx(txBytes []byte) (res types.ResponseDeliverTx) {
 	tx := kts.NewTransaction()
 	tx.Decode(txBytes)
 
-	msg, _ := kts.DecodeMsg(tx.Data)
+	msg, err := kts.DecodeMsg(tx.Data)
+	if err != nil {
+		res.Code = 1
+		res.Log = fmt.Sprintf("Mint DeliverTx decodeMsg Error(%s)", err.Error())
+		return
+	}
+
 	msg.OnDeliver(tx, &res)
 
 	if res.Code == 0 {

@@ -51,6 +51,8 @@ test_create:
 	./main --home test/d5 init
 	./main --home test/d6 init
 
+run:
+	TIKV=101.132.96.156:2379 ./main node
 
 test_clear:
 	@echo "reset文件"
@@ -92,4 +94,5 @@ docker_push_dev: docker_build
 docker_build: build_linux
 	@echo "构建docker镜像"
 	sudo docker build -t $(ImageName) .
+
 

@@ -41,7 +41,6 @@ func InitMaster() {
 // v 验证节点
 // ma 矿工地址
 type SetMiner struct {
-	*kts.BaseDataHandler
 	Addr  common.Address
 	Power int64
 }
@@ -78,7 +77,6 @@ func (t *SetMiner) OnDeliver(tx *kts.Transaction, res *types.ResponseDeliverTx) 
 // 删除矿工地址
 // v 验证节点
 type DeleteMiner struct {
-	*kts.BaseDataHandler
 	Addr common.Address
 }
 

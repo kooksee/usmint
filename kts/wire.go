@@ -6,6 +6,7 @@ import (
 
 func init() {
 	wire.RegisterInterface((*DataHandler)(nil))
+	wire.RegisterInterface((*QueryHandler)(nil))
 
 	wire.Register("m", &M{})
 	wire.Register("tx", &Transaction{})

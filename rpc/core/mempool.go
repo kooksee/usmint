@@ -179,11 +179,13 @@ func BroadcastTxSync(tx types.Tx) (*ctypes.ResultBroadcastTx, error) {
 // |-----------+------+---------+----------+-----------------|
 // | tx        | Tx   | nil     | true     | The transaction |
 func BroadcastTxCommit(tx types.Tx) (*ctypes.ResultBroadcastTxCommit, error) {
-
 	h := tx.Hash()
+
+	logger.Debug("BroadcastTxCommit", "tx", hex.EncodeToString(h))
 
 	// 检查tx是否存在
 	if usdb.GetDb().Has(h) {
+		logger.Error("check tx", "tx", usdb.GetDb().Get(h))
 		return nil, fmt.Errorf("The Tx(%s) Had Existed ", hex.EncodeToString(h))
 	}
 

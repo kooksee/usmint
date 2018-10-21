@@ -76,7 +76,7 @@ func (db *TikvStore) Get(key []byte) []byte {
 // Implements DB.
 func (db *TikvStore) Has(key []byte) bool {
 	ret, err := db.getSnapshot().Get(db.withPrefix(key))
-	return kv.IsErrNotFound(err) && len(ret) == 0
+	return (!kv.IsErrNotFound(err)) && (len(ret) != 0)
 }
 
 // Implements DB.
